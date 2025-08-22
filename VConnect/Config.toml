@@ -1,0 +1,13 @@
+JWT_SECRET = "your-256-bit-secret"
+
+[dbConfig]
+host = "bep43hvig5fe97aqfk4l-mysql.services.clever-cloud.com"
+port = 3306
+name = "bep43hvig5fe97aqfk4l"
+user = "uu5yqx2pogorlhsx"
+password = "xhkFqq83YMaoW0bfpF91"
+
+[dbConfig.connectionPool]
+maxOpenConnections = 5
+minIdleConnections = 1
+maxConnectionLifeTime = 300.25
