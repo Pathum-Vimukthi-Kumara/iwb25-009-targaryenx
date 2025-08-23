@@ -6,11 +6,13 @@ type VolunteerProfile record {
 	string name;
 	string? bio;
 	string? skills;
+	string? profile_photo;
 };
 
 type VolunteerProfileUpdate record {
 	string? bio;
 	string? skills;
+	string? profile_photo;
 };
 
 type VolunteerRanking record {
@@ -22,19 +24,19 @@ type VolunteerRanking record {
 
 // Fetch a single volunteer profile (joins users + optional volunteer_profiles row)
 function fetchVolunteerProfile(int id) returns VolunteerProfile|error {
-	// Ensure volunteer exists and get name
-	stream<record {| int uid; string name; |}, sql:Error?> us = dbClient->query(`SELECT user_id AS uid, name FROM users WHERE user_id = ${id} AND user_type = 'volunteer'`);
-	record {| record {| int uid; string name; |} value; |}|sql:Error? un = us.next();
+	// Ensure volunteer exists and get name and profile_photo
+	stream<record {| int uid; string name; string? profile_photo; |}, sql:Error?> us = dbClient->query(`SELECT user_id AS uid, name, profile_photo FROM users WHERE user_id = ${id} AND user_type = 'volunteer'`);
+	record {| record {| int uid; string name; string? profile_photo; |} value; |}|sql:Error? un = us.next();
 	sql:Error? uClose = us.close(); if uClose is error { return uClose; }
-	if !(un is record {| record {| int uid; string name; |} value; |}) { return error("NotFound", message = "Volunteer not found"); }
-	record {| int uid; string name; |} u = un.value;
+	if !(un is record {| record {| int uid; string name; string? profile_photo; |} value; |}) { return error("NotFound", message = "Volunteer not found"); }
+	record {| int uid; string name; string? profile_photo; |} u = un.value;
 	// Fetch profile details if exist
 	stream<record {| string? bio; string? skills; |}, sql:Error?> ps = dbClient->query(`SELECT bio, skills FROM volunteer_profiles WHERE volunteer_id = ${id}`);
 	record {| record {| string? bio; string? skills; |} value; |}|sql:Error? pn = ps.next();
 	sql:Error? pClose = ps.close(); if pClose is error { return pClose; }
 	string? bio = (); string? skills = ();
 	if pn is record {| record {| string? bio; string? skills; |} value; |} { bio = pn.value.bio; skills = pn.value.skills; }
-	return { volunteer_id: u.uid, name: u.name, bio: bio ?: (), skills: skills ?: () };
+	return { volunteer_id: u.uid, name: u.name, bio: bio ?: (), skills: skills ?: (), profile_photo: u.profile_photo ?: () };
 }
 
 // Update or insert volunteer profile row.
@@ -44,17 +46,22 @@ function upsertVolunteerProfile(int id, VolunteerProfileUpdate upd) returns Volu
 	record {| record {| int uid; |} value; |}|sql:Error? vn = vs.next();
 	sql:Error? vClose = vs.close(); if vClose is error { return vClose; }
 	if !(vn is record {| record {| int uid; |} value; |}) { return error("NotFound", message = "Volunteer not found"); }
-	// Check existing profile row
+	
+	// Update profile_photo in users table
+	if upd.profile_photo is string {
+		_ = check dbClient->execute(`UPDATE users SET profile_photo = ${upd.profile_photo} WHERE user_id = ${id}`);
+	}
+	
+	// Handle volunteer_profiles table for bio and skills
 	stream<record {| int vid; |}, sql:Error?> es = dbClient->query(`SELECT volunteer_id AS vid FROM volunteer_profiles WHERE volunteer_id = ${id}`);
 	record {| record {| int vid; |} value; |}|sql:Error? en = es.next();
 	sql:Error? eClose = es.close(); if eClose is error { return eClose; }
 	if en is record {| record {| int vid; |} value; |} {
-		// update
-		if upd.bio is string { _ = check dbClient->execute(`UPDATE volunteer_profiles SET bio = ${<string>upd.bio} WHERE volunteer_id = ${id}`); }
-		if upd.skills is string { _ = check dbClient->execute(`UPDATE volunteer_profiles SET skills = ${<string>upd.skills} WHERE volunteer_id = ${id}`); }
+		// update existing record
+		_ = check dbClient->execute(`UPDATE volunteer_profiles SET bio = ${upd.bio}, skills = ${upd.skills} WHERE volunteer_id = ${id}`);
 	} else {
-		// insert new
-		_ = check dbClient->execute(`INSERT INTO volunteer_profiles (volunteer_id, bio, skills) VALUES (${id}, ${upd.bio ?: ()}, ${upd.skills ?: ()})`);
+		// insert new record
+		_ = check dbClient->execute(`INSERT INTO volunteer_profiles (volunteer_id, bio, skills) VALUES (${id}, ${upd.bio}, ${upd.skills})`);
 	}
 	return fetchVolunteerProfile(id);
 }

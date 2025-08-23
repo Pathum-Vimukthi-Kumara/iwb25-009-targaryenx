@@ -5,7 +5,8 @@ const EditVolunteerProfile = ({ profile, onClose, onSave }) => {
   const [formData, setFormData] = useState({
     name: '',
     skills: '',
-    bio: ''
+    bio: '',
+    profile_photo: ''
   });
 
   useEffect(() => {
@@ -13,7 +14,8 @@ const EditVolunteerProfile = ({ profile, onClose, onSave }) => {
       setFormData({
         name: profile.name || '',
         skills: profile.skills || '', 
-        bio: profile.bio || ''
+        bio: profile.bio || '',
+        profile_photo: profile.profile_photo || ''
       });
     }
   }, [profile]);
@@ -24,6 +26,28 @@ const EditVolunteerProfile = ({ profile, onClose, onSave }) => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const formData = new FormData();
+      formData.append('image', file);
+      
+      try {
+        const response = await fetch('http://localhost:9000/api/contact/upload_photo', {
+          method: 'POST',
+          body: formData
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          setFormData(prev => ({ ...prev, profile_photo: result.photoUrl }));
+        }
+      } catch (error) {
+        console.error('Upload failed:', error);
+      }
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -38,9 +62,9 @@ const EditVolunteerProfile = ({ profile, onClose, onSave }) => {
       if (!token) throw new Error('Authentication required');
 
       const apiData = {
-        name: formData.name,
+        bio: formData.bio,
         skills: formData.skills,
-        bio: formData.bio
+        profile_photo: formData.profile_photo
       };
 
       const response = await fetch(`http://localhost:9000/api/volunteers/${user_id}`, {
@@ -58,6 +82,7 @@ const EditVolunteerProfile = ({ profile, onClose, onSave }) => {
       }
 
       const updatedProfile = await response.json();
+      console.log('Updated profile response:', updatedProfile);
       onSave(updatedProfile);
       localStorage.setItem("profile", JSON.stringify(updatedProfile));
       alert('Profile updated successfully!');
@@ -90,8 +115,11 @@ const EditVolunteerProfile = ({ profile, onClose, onSave }) => {
 
           <form onSubmit={handleSubmit}>
             <div className="mb-4">
-              <label htmlFor="name" className="block text-gray-700 font-medium mb-2">Full Name</label>
-              <input type="text" id="name" name="name" value={formData.name} onChange={handleChange} className="w-full px-3 py-2 border rounded-md" required />
+              <label htmlFor="profile_photo" className="block text-gray-700 font-medium mb-2">Profile Photo</label>
+              <input type="file" id="profile_photo" accept="image/*" onChange={handleFileChange} className="w-full px-3 py-2 border rounded-md" />
+              {formData.profile_photo && (
+                <p className="text-sm text-gray-500 mt-1">Current: {formData.profile_photo}</p>
+              )}
             </div>
 
             <div className="mb-4">

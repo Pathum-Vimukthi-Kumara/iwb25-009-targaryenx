@@ -1,8 +1,10 @@
 import ballerina/http;
-
+import ballerina/io;
 import ballerina/jwt;
 import ballerina/log;
+import ballerina/mime;
 import ballerina/sql;
+import ballerina/time;
 
 // Shared validator config (HS256) matching the issuer side in generateJwt()
 final jwt:ValidatorConfig validatorConfig = { 
@@ -579,9 +581,16 @@ service /api/volunteers on mainListener {
     anydata? typeJ = payload["user_type"]; anydata? idJ = payload["user_id"];
     int callerId = -1; if idJ is int { callerId = idJ; } else if idJ is string { int|error parsed = 'int:fromString(idJ); if parsed is int { callerId = parsed; } }
     if !(typeJ is string) || typeJ != "volunteer" || callerId != id { http:Response r = new; r.statusCode = http:STATUS_FORBIDDEN; r.setJsonPayload({"error": "Volunteer ownership required"}); return caller->respond(r); }
+    
     VolunteerProfile|error p = upsertVolunteerProfile(id, upd);
     if p is VolunteerProfile { return caller->respond(p); }
-    http:Response r = new; r.statusCode = (<error>p).message() == "Volunteer not found" ? http:STATUS_NOT_FOUND : http:STATUS_INTERNAL_SERVER_ERROR; r.setJsonPayload({"error": (<error>p).message()}); return caller->respond(r);
+    
+    error e = <error>p;
+    log:printError("Profile update failed", 'error = e);
+    http:Response r = new; 
+    r.statusCode = e.message() == "Volunteer not found" ? http:STATUS_NOT_FOUND : http:STATUS_INTERNAL_SERVER_ERROR; 
+    r.setJsonPayload({"error": e.message(), "detail": e.toString()}); 
+    return caller->respond(r);
     }
     // Volunteer badges
     resource function get [int id]/badges(http:Caller caller, http:Request req) returns error? {
@@ -838,6 +847,23 @@ service /api/auth on mainListener {
     }
 }
 
+// Static file server for uploaded images
+service /uploads on mainListener {
+    resource function get [string fileName](http:Caller caller) returns error? {
+        string filePath = "./uploads/" + fileName;
+        byte[]|io:Error fileContent = io:fileReadBytes(filePath);
+        if fileContent is byte[] {
+            http:Response response = new;
+            response.setBinaryPayload(fileContent);
+            response.setHeader("Content-Type", "image/jpeg");
+            return caller->respond(response);
+        }
+        http:Response r = new;
+        r.statusCode = http:STATUS_NOT_FOUND;
+        return caller->respond(r);
+    }
+}
+
 @http:ServiceConfig {
     cors: {
         allowOrigins: ["http://localhost:5173"],
@@ -866,6 +892,23 @@ service /api/contact on mainListener {
         if vErr is error { return; }
         ContactMessage[] messages = check getAllContactMessages();
         return caller->respond(messages);
+    }
+
+    resource function post upload_photo(http:Request request, http:Caller caller) returns error? {
+        var bodyParts = request.getBodyParts();
+        if (bodyParts is mime:Entity[]) {
+            foreach var part in bodyParts {
+                if (part.getContentType().startsWith("image/")) {
+                    byte[] imageBytes = check part.getByteArray();
+                    string fileName = "profile_" + time:utcNow()[0].toString() + ".jpg";
+                    string filePath = "./uploads/" + fileName;
+                    
+                    check io:fileWriteBytes(filePath, imageBytes);
+                    return caller->respond({"success": true, "photoUrl": "/uploads/" + fileName});
+                }
+            }
+        }
+        return caller->respond({"success": false, "message": "No image file found"});
     }
 }
 

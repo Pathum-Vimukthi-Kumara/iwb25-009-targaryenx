@@ -12,6 +12,17 @@ const VolunteerProfile = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [error, setError] = useState(null);
   
+  const convertGoogleDriveUrl = (url) => {
+    if (url && url.startsWith('/uploads/')) {
+      return `http://localhost:9000${url}`;
+    }
+    if (url && url.includes('drive.google.com')) {
+      const fileId = url.match(/\/d\/([a-zA-Z0-9-_]+)/)?.[1];
+      return fileId ? `https://drive.google.com/uc?export=download&id=${fileId}` : url;
+    }
+    return url;
+  };
+  
   const hardcodedBadges = [
     {
       badge_id: 1,
@@ -196,13 +207,8 @@ const VolunteerProfile = () => {
   const handleProfileUpdate = (updatedProfile) => {
     setProfile({
       ...profile,
-      name: updatedProfile.name,
-      phone: updatedProfile.phone,
-      profile: {
-        ...(profile?.profile || {}),
-        skills: updatedProfile.skills,
-        bio: updatedProfile.bio
-      }
+      ...updatedProfile,
+      profile_photo: updatedProfile.profile_photo
     });
     setIsEditModalOpen(false);
   };
@@ -243,8 +249,19 @@ const VolunteerProfile = () => {
             </div>
             
             <div className="text-center mb-20">
-              <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <FiUser className="text-primary text-4xl" />
+              <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4 overflow-hidden">
+                {profile?.profile_photo ? (
+                  <img 
+                    src={convertGoogleDriveUrl(profile.profile_photo)} 
+                    alt="Profile" 
+                    className="w-full h-full object-cover rounded-full"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      e.target.nextSibling.style.display = 'block';
+                    }}
+                  />
+                ) : null}
+                <FiUser className={`text-primary text-2xl ${profile?.profile_photo ? 'hidden' : 'block'}`} />
               </div>
               <h3 className="text-xl font-bold">{profile?.name || 'Loading...'}</h3>
               <p className="text-gray-500 text-sm mt-1">Volunteer</p>
