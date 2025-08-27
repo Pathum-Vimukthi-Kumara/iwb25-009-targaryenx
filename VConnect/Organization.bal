@@ -436,42 +436,7 @@ function listDonationRequests(int orgId) returns DonationRequest[]|error {
     if cerr is error {
         return cerr;
     }
-    return items;
-}
 
-function getAllDonationRequests() returns DonationRequest[]|error {
-    DonationRequest[] items = [];
-    stream<DonationRequest, sql:Error?> rs = dbClient->query(`SELECT request_id, organization_id, title, description, target_amount, contact_info, status, created_at FROM donation_requests WHERE status = 'active' ORDER BY created_at DESC`);
-    while true {
-        record {|DonationRequest value;|}|sql:Error? n = rs.next();
-        if n is record {|DonationRequest value;|} {
-            items.push(n.value);
-            continue;
-        }
-        break;
-    }
-    sql:Error? cerr = rs.close();
-    if cerr is error {
-        return cerr;
-    }
-    return items;
-}
-
-function getAllDonationRequestsWithStatus() returns DonationRequest[]|error {
-    DonationRequest[] items = [];
-    stream<DonationRequest, sql:Error?> rs = dbClient->query(`SELECT request_id, organization_id, title, description, target_amount, contact_info, status, created_at FROM donation_requests ORDER BY created_at DESC`);
-    while true {
-        record {|DonationRequest value;|}|sql:Error? n = rs.next();
-        if n is record {|DonationRequest value;|} {
-            items.push(n.value);
-            continue;
-        }
-        break;
-    }
-    sql:Error? cerr = rs.close();
-    if cerr is error {
-        return cerr;
-    }
     return items;
 }
 

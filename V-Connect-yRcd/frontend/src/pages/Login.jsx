@@ -38,20 +38,7 @@ const Login = () => {
   }, [location]);
 
   // Form states
-  const [loginForm, setLoginForm] = useState({ email: "", password: "" });
-  const [volunteerForm, setVolunteerForm] = useState({
-    name: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-    phone: "",
-  });
-  const [organizationForm, setOrganizationForm] = useState({
-    name: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-    phone: "",
+
   });
 
   // Error and loading states
@@ -76,7 +63,7 @@ const Login = () => {
       });
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.message || "Login failed");
+
       }
       // Store token and user info in localStorage
       localStorage.setItem("token", data.token);
@@ -125,7 +112,7 @@ const Login = () => {
       });
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.message || "Registration failed");
+
       }
       // Automatically switch to login
       setActiveTab("login");
@@ -227,27 +214,23 @@ const Login = () => {
       <Navbar />
 
       <main className="pt-20 min-h-screen flex flex-col">
-        <div className="flex-grow flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50">
-          <div className="max-w-6xl w-full bg-white rounded-xl overflow-hidden shadow-lg">
+        <div className="flex-grow flex items-center justify-center py-10 px-4 sm:px-6 lg:px-8 bg-gray-50">
+          <div className="max-w-6xl w-full bg-white rounded-xl overflow-hidden shadow-lg min-h-[570px]">
             <div className="flex flex-col md:flex-row">
               {/* Left side - Image */}
-              <div className="md:w-1/2 bg-primary">
-                <motion.div
+
                   className="h-full w-full"
                   animate={{ opacity: 1 }}
                   initial={{ opacity: 0.8 }}
                   transition={{ duration: 0.5 }}
                 >
-                  <img
-                    src={activeTab === "login" ? loginImg : signupImg}
-                    alt={activeTab === "login" ? "Login Image" : "Signup Image"}
-                    className="h-full w-full object-cover"
+
                   />
                 </motion.div>
               </div>
 
               {/* Right side - Form */}
-              <div className="md:w-1/2 p-8">
+              <div className="md:w-1/2 p-6 md:p-8 overflow-y-auto max-h-[80vh]">
                 {/* Tab Navigation */}
                 <div className="flex mb-8 border-b">
                   <button
@@ -539,10 +522,7 @@ const Login = () => {
                           </div>
 
                           <div className="mb-4">
-                            <label
-                              className="block text-gray-700 text-sm font-medium mb-2"
-                              htmlFor="volunteer-bio"
-                            >
+
                               Bio (Optional)
                             </label>
                             <textarea
