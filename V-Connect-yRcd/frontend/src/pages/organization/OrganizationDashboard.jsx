@@ -174,9 +174,9 @@ const OrganizationDashboard = () => {
               <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
                 <motion.div 
                   whileHover={{ y: -5, boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)" }}
-                  className="bg-white rounded-lg shadow p-4 sm:p-6 flex items-center transition-shadow duration-300"
+                  className="bg-white rounded-lg shadow p-3 sm:p-4 flex items-center transition-shadow duration-300"
                 >
-                  <div className="rounded-full bg-blue-100 p-3 sm:p-4 mr-3 sm:mr-4">
+                  <div className="rounded-full bg-blue-100 p-2 sm:p-3 mr-3">
                     <FiCalendar className="text-primary text-lg sm:text-xl" />
                   </div>
                   <div>
@@ -194,9 +194,9 @@ const OrganizationDashboard = () => {
                 
                 <motion.div 
                   whileHover={{ y: -5, boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)" }}
-                  className="bg-white rounded-lg shadow p-4 sm:p-6 flex items-center transition-shadow duration-300"
+                  className="bg-white rounded-lg shadow p-3 sm:p-4 flex items-center transition-shadow duration-300"
                 >
-                  <div className="rounded-full bg-green-100 p-3 sm:p-4 mr-3 sm:mr-4">
+                  <div className="rounded-full bg-green-100 p-2 sm:p-3 mr-3">
                     <FiClock className="text-green-600 text-lg sm:text-xl" />
                   </div>
                   <div>
@@ -214,9 +214,9 @@ const OrganizationDashboard = () => {
                 
                 <motion.div 
                   whileHover={{ y: -5, boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)" }}
-                  className="bg-white rounded-lg shadow p-4 sm:p-6 flex items-center transition-shadow duration-300"
+                  className="bg-white rounded-lg shadow p-3 sm:p-4 flex items-center transition-shadow duration-300"
                 >
-                  <div className="rounded-full bg-purple-100 p-3 sm:p-4 mr-3 sm:mr-4">
+                  <div className="rounded-full bg-purple-100 p-2 sm:p-3 mr-3">
                     <FiUsers className="text-purple-600 text-lg sm:text-xl" />
                   </div>
                   <div>
@@ -234,9 +234,9 @@ const OrganizationDashboard = () => {
                 
                 <motion.div 
                   whileHover={{ y: -5, boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)" }}
-                  className="bg-white rounded-lg shadow p-4 sm:p-6 flex items-center transition-shadow duration-300"
+                  className="bg-white rounded-lg shadow p-3 sm:p-4 flex items-center transition-shadow duration-300"
                 >
-                  <div className="rounded-full bg-yellow-100 p-3 sm:p-4 mr-3 sm:mr-4">
+                  <div className="rounded-full bg-yellow-100 p-2 sm:p-3 mr-3">
                     <FiCheckCircle className="text-yellow-600 text-lg sm:text-xl" />
                   </div>
                   <div>

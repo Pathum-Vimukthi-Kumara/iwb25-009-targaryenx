@@ -37,6 +37,8 @@ const Login = () => {
     password: '', 
     confirmPassword: '',
     phone: '',
+    bio: '',
+    skills: ''
   });
   const [organizationForm, setOrganizationForm] = useState({
     name: '',
@@ -44,6 +46,9 @@ const Login = () => {
     password: '',
     confirmPassword: '',
     phone: '',
+    description: '',
+    address: '',
+    website: ''
   });
   
   // Error and loading states
@@ -218,13 +223,12 @@ const Login = () => {
   return (
     <>
       <Navbar />
-      
       <main className="pt-20 min-h-screen flex flex-col">
-        <div className="flex-grow flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50">
-          <div className="max-w-6xl w-full bg-white rounded-xl overflow-hidden shadow-lg">
+        <div className="flex-grow flex items-center justify-center py-10 px-4 sm:px-6 lg:px-8 bg-gray-50">
+          <div className="max-w-6xl w-full bg-white rounded-xl overflow-hidden shadow-lg min-h-[570px]">
             <div className="flex flex-col md:flex-row">
               {/* Left side - Image */}
-              <div className="md:w-1/2 bg-primary">
+              <div className="md:w-1/2 bg-white">
                 <motion.div 
                   className="h-full w-full"
                   animate={{ opacity: 1 }}
@@ -234,13 +238,13 @@ const Login = () => {
                   <img 
                     src={activeTab === 'login' ? loginImg : signupImg} 
                     alt={activeTab === 'login' ? "Login Image" : "Signup Image"} 
-                    className="h-full w-full object-cover"
+                    className="h-full w-full object-cover rounded-tl-xl md:rounded-bl-xl md:rounded-tr-none rounded-tr-xl"
                   />
                 </motion.div>
               </div>
 
               {/* Right side - Form */}
-              <div className="md:w-1/2 p-8">
+              <div className="md:w-1/2 p-6 md:p-8 overflow-y-auto max-h-[80vh]">
                 {/* Tab Navigation */}
                 <div className="flex mb-8 border-b">
                   <button
@@ -477,6 +481,26 @@ const Login = () => {
                           </div>
                           
                           <div className="mb-4">
+                            <label className="block text-gray-700 text-sm font-medium mb-2" htmlFor="volunteer-phone">
+                              Phone Number
+                            </label>
+                            <div className="relative">
+                              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                <FiPhone className="text-gray-400" />
+                              </div>
+                              <input
+                                id="volunteer-phone"
+                                type="tel"
+                                required
+                                value={volunteerForm.phone}
+                                onChange={(e) => setVolunteerForm({...volunteerForm, phone: e.target.value})}
+                                className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary"
+                                placeholder="+1 (555) 123-4567"
+                              />
+                            </div>
+                          </div>
+                          
+                          <div className="mb-4">
                             <label className="block text-gray-700 text-sm font-medium mb-2" htmlFor="volunteer-bio">
                               Bio (Optional)
                             </label>
@@ -642,6 +666,26 @@ const Login = () => {
                                 className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary"
                                 placeholder="123 Main St, City, Country"
                                 required
+                              />
+                            </div>
+                          </div>
+                          
+                          <div className="mb-4">
+                            <label className="block text-gray-700 text-sm font-medium mb-2" htmlFor="org-phone">
+                              Phone Number
+                            </label>
+                            <div className="relative">
+                              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                <FiPhone className="text-gray-400" />
+                              </div>
+                              <input
+                                id="org-phone"
+                                type="tel"
+                                required
+                                value={organizationForm.phone}
+                                onChange={(e) => setOrganizationForm({...organizationForm, phone: e.target.value})}
+                                className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary"
+                                placeholder="+1 (555) 123-4567"
                               />
                             </div>
                           </div>
