@@ -1254,27 +1254,6 @@ service /api/admin on mainListener {
             return caller->respond(r);
         }
 
-        // Step 3: Get JSON payload
-        json payload = check req.getJsonPayload();
-
-        // Ensure payload is a JSON object
-        if payload is map<json> {
-            BadgeCreate b = {
-                volunteer_id: volunteer_id,
-                badge_name: <string>payload["badge_name"],
-                badge_description: <string?>payload["badge_description"],
-                awarded_by: adminId
-            };
-
-            // Step 4: Call createBadge
-            Badge newBadge = check createBadge(b);
-
-            // Step 5: Respond with the created badge
-            return caller->respond(newBadge);
-        } else {
-            return error("InvalidPayload", message = "Request body must be a JSON object");
-        }
-
     }
 
     // Update event application status (?status=approved|rejected|pending)
@@ -1347,6 +1326,7 @@ service /pub on mainListener {
         OrgDonation[] donations = check getOrgDonations(organization_id);
         return caller->respond(donations);
     }
+
 
     // Public events
     resource function get events/org/[int organization_id](http:Caller caller, http:Request req) returns error? {
