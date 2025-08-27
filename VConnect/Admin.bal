@@ -9,7 +9,9 @@ type UserSummary record {|
     boolean? is_active;
 |};
 
-type UserStatusUpdate record {| boolean is_active; |};
+type UserStatusUpdate record {|
+    boolean is_active;
+|};
 
 type VolunteerContribution record {|
     int volunteer_id;
@@ -23,24 +25,33 @@ function listAllUsers() returns UserSummary[]|error {
     UserSummary[] list = [];
     stream<UserSummary, sql:Error?> rs = dbClient->query(`SELECT user_id, email, user_type, name, is_active FROM users`);
     while true {
-        record {| UserSummary value; |}|sql:Error? n = rs.next();
-        if n is record {| UserSummary value; |} { list.push(n.value); continue; }
+        record {|UserSummary value;|}|sql:Error? n = rs.next();
+        if n is record {|UserSummary value;|} {
+            list.push(n.value);
+            continue;
+        }
         break;
     }
     sql:Error? cerr = rs.close();
-    if cerr is error { return cerr; }
+    if cerr is error {
+        return cerr;
+    }
     return list;
 }
 
 function updateUserStatus(int id, boolean active) returns string|error {
     sql:ExecutionResult r = check dbClient->execute(`UPDATE users SET is_active = ${active} WHERE user_id = ${id}`);
-    if r.affectedRowCount is int && r.affectedRowCount > 0 { return "Status updated"; }
+    if r.affectedRowCount is int && r.affectedRowCount > 0 {
+        return "Status updated";
+    }
     return error("NotFound", message = "User not found");
 }
 
 function deleteUserAccount(int id) returns string|error {
     sql:ExecutionResult r = check dbClient->execute(`DELETE FROM users WHERE user_id = ${id}`);
-    if r.affectedRowCount is int && r.affectedRowCount > 0 { return "Deleted"; }
+    if r.affectedRowCount is int && r.affectedRowCount > 0 {
+        return "Deleted";
+    }
     return error("NotFound", message = "User not found");
 }
 
@@ -54,11 +65,17 @@ function listVolunteerContributionsForEvent(int eventId) returns VolunteerContri
         WHERE f.event_id = ${eventId}
         GROUP BY f.volunteer_id, u.name`);
     while true {
-        record {| VolunteerContribution value; |}|sql:Error? n = rs.next();
-        if n is record {| VolunteerContribution value; |} { list.push(n.value); continue; }
+        record {|VolunteerContribution value;|}|sql:Error? n = rs.next();
+        if n is record {|VolunteerContribution value;|} {
+            list.push(n.value);
+            continue;
+        }
         break;
     }
-    sql:Error? cerr = rs.close(); if cerr is error { return cerr; }
+    sql:Error? cerr = rs.close();
+    if cerr is error {
+        return cerr;
+    }
     return list;
 }
 
@@ -75,13 +92,13 @@ public function createBadge(BadgeCreate b) returns Badge|error {
     }
 
     // Validate volunteer exists
-    stream<record {| int uid; |}, sql:Error?> vs = dbClient->query(
+    stream<record {|int uid;|}, sql:Error?> vs = dbClient->query(
         `SELECT user_id as uid FROM users WHERE user_id = ${b.volunteer_id}`
     );
-    record {| record {| int uid; |} value; |}? vn = check vs.next();
+    record {|record {|int uid;|} value;|}? vn = check vs.next();
     check vs.close();
 
-    if !(vn is record {| record {| int uid; |} value; |}) {
+    if !(vn is record {|record {|int uid;|} value;|}) {
         return error("NotFound", message = "Volunteer not found");
     }
 
@@ -98,7 +115,7 @@ public function createBadge(BadgeCreate b) returns Badge|error {
             badge_id: newId,
             volunteer_id: b.volunteer_id,
             badge_name: name,
-            badge_description: b.badge_description, 
+            badge_description: b.badge_description,
             awarded_by: b.awarded_by
         };
 
