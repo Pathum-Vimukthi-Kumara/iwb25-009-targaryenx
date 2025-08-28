@@ -1228,7 +1228,6 @@ service /api/admin on mainListener {
         r.setJsonPayload({"error": msg});
         return caller->respond(r);
     }
-<<<<<<< HEAD
 
     // Recalculate and award performance badges automatically for a volunteer
     resource function post volunteers/[int volunteer_id]/performance_badges(http:Caller caller, http:Request req) returns error? {
@@ -1276,34 +1275,6 @@ service /api/admin on mainListener {
             return error("InvalidPayload", message = "Request body must be a JSON object");
         }
 
-=======
-
-    // Recalculate and award performance badges automatically for a volunteer
-    resource function post volunteers/[int volunteer_id]/performance_badges(http:Caller caller, http:Request req) returns error? {
-        // Step 1: Ensure the caller is admin
-        int|error adm = ensureAdmin(req);
-        if adm is error {
-            http:Response r = new;
-            r.statusCode = http:STATUS_FORBIDDEN;
-            r.setJsonPayload({"error": (<error>adm).message()});
-            return caller->respond(r);
-        }
-        int adminId = <int>adm;
-
-        // Step 2: Check volunteer exists
-        stream<record {|int vid;|}, sql:Error?> vs = dbClient->query(
-        `SELECT user_id AS vid FROM users WHERE user_id = ${volunteer_id} AND user_type = 'volunteer'`
-        );
-        record {|record {|int vid;|} value;|}? vn = check vs.next();
-        check vs.close();
-        if !(vn is record {|record {|int vid;|} value;|}) {
-            http:Response r = new;
-            r.statusCode = http:STATUS_NOT_FOUND;
-            r.setJsonPayload({"error": "Volunteer not found"});
-            return caller->respond(r);
-        }
-
->>>>>>> 5a4beeb1158daf2696e953e0b42361c0c87fda5c
     }
 
     // Update event application status (?status=approved|rejected|pending)
@@ -1366,18 +1337,6 @@ service /pub on mainListener {
         return caller->respond(r);
     }
 
-<<<<<<< HEAD
-    // get all donation requests
-    resource function get donation_requests() returns DonationRequest[]|http:InternalServerError {
-        DonationRequest[]|error result = getAllDonationRequests();
-        if result is error {
-            return http:INTERNAL_SERVER_ERROR;
-        }
-        return result;
-    }
-
-=======
->>>>>>> 5a4beeb1158daf2696e953e0b42361c0c87fda5c
     resource function get donation_requests/org/[int organization_id](http:Caller caller, http:Request req) returns error? {
         DonationRequest[] list = check listDonationRequests(organization_id);
         return caller->respond(list);
@@ -1389,10 +1348,15 @@ service /pub on mainListener {
         return caller->respond(donations);
     }
 
-<<<<<<< HEAD
-=======
+    // get all donation requests
+    resource function get donation_requests() returns DonationRequest[]|http:InternalServerError {
+        DonationRequest[]|error result = getAllDonationRequests();
+        if result is error {
+            return http:INTERNAL_SERVER_ERROR;
+        }
+        return result;
+    }
 
->>>>>>> 5a4beeb1158daf2696e953e0b42361c0c87fda5c
     // Public events
     resource function get events/org/[int organization_id](http:Caller caller, http:Request req) returns error? {
         OrgEvent[] events = check getOrgEvents(organization_id);

@@ -1,11 +1,6 @@
 // Get all events (public API helper)
 
 import ballerina/sql;
-<<<<<<< HEAD
-
-
-
-=======
 
 function getAllEvents() returns OrgEvent[]|error {
     OrgEvent[] events = [];
@@ -25,7 +20,6 @@ function getAllEvents() returns OrgEvent[]|error {
     return events;
 }
 
->>>>>>> 5a4beeb1158daf2696e953e0b42361c0c87fda5c
 type OrgProfile record {|
     int organization_id?;
     string description;
@@ -144,23 +138,7 @@ type NotFoundError error<record {string message;}>;
 /// Get organization profile by id.
 /// @param id organization id
 /// @return OrgProfile or error
-function getAllEvents() returns OrgEvent[]|error {
-    OrgEvent[] events = [];
-    stream<OrgEvent, sql:Error?> resultStream = dbClient->query(`SELECT event_id, organization_id, title, description, location, event_date, start_time, end_time, required_volunteers, status, created_at FROM events`);
-    while true {
-        record {|OrgEvent value;|}|sql:Error? n = resultStream.next();
-        if n is record {|OrgEvent value;|} {
-            events.push(n.value);
-            continue;
-        }
-        break;
-    }
-    sql:Error? closeErr = resultStream.close();
-    if closeErr is error {
-        return closeErr;
-    }
-    return events;
-}
+
 function getOrgProfile(int id) returns OrgProfile|error {
     stream<OrgProfile, sql:Error?> s = dbClient->query(`SELECT organization_id, description, address, website, is_verified FROM organization_profiles WHERE organization_id = ${id}`);
     record {|OrgProfile value;|}|sql:Error? n = s.next();
@@ -458,51 +436,59 @@ function listDonationRequests(int orgId) returns DonationRequest[]|error {
     if cerr is error {
         return cerr;
     }
-<<<<<<< HEAD
-=======
-
->>>>>>> 5a4beeb1158daf2696e953e0b42361c0c87fda5c
     return items;
 }
 
-// get all donation requests
-function getAllDonationRequestsSafe() returns DonationRequest[]|error {
-    DonationRequest[]|error result = getAllDonationRequests();
-    if result is error {
-        return error("InternalServerError", message = "Failed to fetch donation requests");
+function getAllDonationRequests() returns DonationRequest[]|error {
+    DonationRequest[] items = [];
+    stream<DonationRequest, sql:Error?> rs = dbClient->query(`SELECT request_id, organization_id, title, description, target_amount, contact_info, status, created_at FROM donation_requests WHERE status = 'active' ORDER BY created_at DESC`);
+    while true {
+        record {|DonationRequest value;|}|sql:Error? n = rs.next();
+        if n is record {|DonationRequest value;|} {
+            items.push(n.value);
+            continue;
+        }
+        break;
     }
-    return result;
+    sql:Error? cerr = rs.close();
+    if cerr is error {
+        return cerr;
+    }
+    return items;
+}
+
+function getAllDonationRequestsWithStatus() returns DonationRequest[]|error {
+    DonationRequest[] items = [];
+    stream<DonationRequest, sql:Error?> rs = dbClient->query(`SELECT request_id, organization_id, title, description, target_amount, contact_info, status, created_at FROM donation_requests ORDER BY created_at DESC`);
+    while true {
+        record {|DonationRequest value;|}|sql:Error? n = rs.next();
+        if n is record {|DonationRequest value;|} {
+            items.push(n.value);
+            continue;
+        }
+        break;
+    }
+    sql:Error? cerr = rs.close();
+    if cerr is error {
+        return cerr;
+    }
+    return items;
 }
 
 function getDonationRequest(int requestId) returns DonationRequest|error {
     if requestId <= 0 {
         return error("ValidationError", message = "requestId required");
     }
-<<<<<<< HEAD
-    stream<DonationRequest, sql:Error?> s = dbClient->query(
-        `SELECT request_id, organization_id, title, description, target_amount, contact_info, status, created_at 
-        FROM donation_requests WHERE request_id = ${requestId}`
-    );
-    record {|DonationRequest value;|}|sql:Error? n = s.next();
-    sql:Error? cerr = s.close();
-    if cerr is error {
-        return error("InternalServerError", message = cerr.message());
-=======
     stream<DonationRequest, sql:Error?> s = dbClient->query(`SELECT request_id, organization_id, title, description, target_amount, contact_info, status, created_at FROM donation_requests WHERE request_id = ${requestId}`);
     record {|DonationRequest value;|}|sql:Error? n = s.next();
     sql:Error? cerr = s.close();
     if cerr is error {
         return cerr;
->>>>>>> 5a4beeb1158daf2696e953e0b42361c0c87fda5c
     }
     if n is record {|DonationRequest value;|} {
         return n.value;
     }
-<<<<<<< HEAD
-    return error("NotFoundError", message = "Donation request not found");
-=======
     return error("NotFound", message = "Donation request not found");
->>>>>>> 5a4beeb1158daf2696e953e0b42361c0c87fda5c
 }
 
 function updateDonationRequest(int requestId, DonationRequestUpdate upd) returns DonationRequest|error {
@@ -556,23 +542,6 @@ function updateDonationRequest(int requestId, DonationRequestUpdate upd) returns
         return error("NoChange", message = "No fields updated or donation request not found");
     }
     return getDonationRequest(requestId);
-}
-function getAllDonationRequests() returns DonationRequest[]|error {
-    DonationRequest[] items = [];
-    stream<DonationRequest, sql:Error?> rs = dbClient->query(`SELECT request_id, organization_id, title, description, target_amount, contact_info, status, created_at FROM donation_requests`);
-    while true {
-        record {|DonationRequest value;|}|sql:Error? n = rs.next();
-        if n is record {|DonationRequest value;|} {
-            items.push(n.value);
-            continue;
-        }
-        break;
-    }
-    sql:Error? cerr = rs.close();
-    if cerr is error {
-        return cerr;
-    }
-    return items;
 }
 
 function deleteDonationRequest(int requestId) returns string|error {
