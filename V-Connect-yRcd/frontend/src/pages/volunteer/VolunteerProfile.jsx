@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { FiEdit2, FiAward, FiClock, FiUser, FiMail, FiPhone, FiStar } from 'react-icons/fi';
 import DashboardLayout from './DashboardLayout';
 import EditVolunteerProfile from './EditVolunteerProfile';
+import LoadingSpinner from '../../components/LoadingSpinner';
 
 const VolunteerProfile = () => {
   const [profile, setProfile] = useState([]);
@@ -221,138 +222,167 @@ const VolunteerProfile = () => {
       </div>
       
       {isLoading ? (
-        <div className="text-center py-12">
-          <div className="inline-block w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-          <p className="mt-2 text-gray-600">Loading profile...</p>
-        </div>
+        <LoadingSpinner />
       ) : error ? (
         <div className="bg-red-50 p-4 rounded-lg mb-6">
           <p className="text-red-600">{error}</p>
         </div>
       ) : (
-        <div className="flex justify-center">
-          {/* Profile Card */}
+        <div className="space-y-6">
+          {/* Profile Header Card */}
           <motion.div 
-            className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 w-full max-w-3xl min-h-[100px]"
+            className="bg-white rounded-lg shadow-sm border border-gray-100 p-6"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-semibold">Personal Information</h2>
+            <div className="flex justify-between items-start mb-6">
+              <div className="flex items-center space-x-4">
+                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center overflow-hidden">
+                  {profile?.profile_photo ? (
+                    <img 
+                      src={convertGoogleDriveUrl(profile.profile_photo)} 
+                      alt="Profile" 
+                      className="w-full h-full object-cover rounded-full"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'block';
+                      }}
+                    />
+                  ) : null}
+                  <FiUser className={`text-primary text-xl ${profile?.profile_photo ? 'hidden' : 'block'}`} />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold">{profile?.name || 'Loading...'}</h2>
+                  <p className="text-gray-500">Volunteer</p>
+                  <div className="flex items-center mt-1 text-gray-600">
+                    <FiMail className="mr-2 text-sm" />
+                    <span className="text-sm">{profile?.email || 'Not provided'}</span>
+                  </div>
+                </div>
+              </div>
               <button 
                 onClick={() => setIsEditModalOpen(true)}
-                className="text-primary hover:bg-primary/10 p-2 rounded-full transition-colors"
+                className="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary/90 transition-colors flex items-center space-x-2"
               >
-                <FiEdit2 />
+                <FiEdit2 size={16} />
+                <span>Edit Profile</span>
               </button>
             </div>
-            
-            <div className="text-center mb-20">
-              <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4 overflow-hidden">
-                {profile?.profile_photo ? (
-                  <img 
-                    src={convertGoogleDriveUrl(profile.profile_photo)} 
-                    alt="Profile" 
-                    className="w-full h-full object-cover rounded-full"
-                    onError={(e) => {
-                      e.target.style.display = 'none';
-                      e.target.nextSibling.style.display = 'block';
-                    }}
-                  />
-                ) : null}
-                <FiUser className={`text-primary text-2xl ${profile?.profile_photo ? 'hidden' : 'block'}`} />
-              </div>
-              <h3 className="text-xl font-bold">{profile?.name || 'Loading...'}</h3>
-              <p className="text-gray-500 text-sm mt-1">Volunteer</p>
-            </div>
-            
-            <div className="space-y-4">
-              <div className="flex items-center">
-                <FiMail className="text-gray-400 mr-3" />
-                <div>
-                  <p className="text-sm text-gray-500">Email</p>
-                  <p>{profile?.email || 'Not provided'}</p>
-                </div>
-              </div>
-              
-              
-            </div>
-            <hr className="mt-12 mb-7"/>
-                <div>
-                  <h3 className="font-semibold mb-2">Bio</h3>
-                  <p className="text-gray-600">{profile?.bio || 'No bio provided.'}</p>
-                </div>
+          </motion.div>
 
-            <hr className="my-6" />
-            
-            <div>
-              <h3 className="font-semibold mb-2">Skills</h3>
-              <div className="flex flex-wrap gap-2">
-                {profile?.skills ? (
-                  profile.skills.split(',').map((skill, index) => (
-                    <span 
-                      key={index} 
-                      className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm"
-                    >
-                      {skill.trim()}
-                    </span>
-                  ))
-                ) : (
-                  <p className="text-gray-500">No skills listed</p>
-                )}
+          {/* Bio and Skills Card */}
+          <motion.div 
+            className="bg-white rounded-lg shadow-sm border border-gray-100 p-6"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.1 }}
+          >
+            <h3 className="text-lg font-semibold mb-4">About</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h4 className="font-bold text-gray-700 mb-2">Bio</h4>
+                <p className="text-gray-600">{profile?.bio || 'No bio provided.'}</p>
+              </div>
+              <div>
+                <h4 className="font-bold text-gray-700 mb-2">Skills</h4>
+                <div className="flex flex-wrap gap-2">
+                  {profile?.skills ? (
+                    profile.skills.split(',').map((skill, index) => (
+                      <span 
+                        key={index} 
+                        className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm"
+                      >
+                        {skill.trim()}
+                      </span>
+                    ))
+                  ) : (
+                    <p className="text-gray-500">No skills listed</p>
+                  )}
+                </div>
               </div>
             </div>
-            
-            <hr className="my-6" />
-            
-            {/* Badges Section */}
-            <div>
-              <h3 className="font-semibold mb-4">Badges Earned</h3>
+          </motion.div>
+
+          {/* Badges Card */}
+          <motion.div 
+            className="bg-white rounded-lg shadow-sm border border-gray-100 p-6"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.2 }}
+          >
+            <h3 className="text-lg font-semibold mb-4">Badges Earned</h3>
+            {(badges.length > 0 ? badges : hardcodedBadges).length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {(badges.length > 0 ? badges : hardcodedBadges).map((badge) => (
                   <div key={badge.badge_id} className="bg-gray-50 rounded-lg p-4 flex items-start">
-                    <div className="bg-yellow-100 text-yellow-600 p-3 rounded-lg mr-4 flex-shrink-0">
-                      <FiAward size={24} />
+                    <div className="bg-yellow-100 text-yellow-600 p-2 rounded-lg mr-3 flex-shrink-0">
+                      <FiAward size={20} />
                     </div>
                     <div className="flex-grow">
-                      <h4 className="font-semibold text-lg mb-1">{badge.badge_name}</h4>
-                      <p className="text-sm text-gray-600 mb-2">{badge.badge_description}</p>
+                      <h4 className="font-medium mb-1">{badge.badge_name}</h4>
+                      <p className="text-sm text-gray-600 mb-1">{badge.badge_description}</p>
                       <p className="text-xs text-gray-500">
-                        Earned on {formatDate(badge.earned_date)}
+                        {formatDate(badge.earned_date)}
                       </p>
                     </div>
                   </div>
                 ))}
               </div>
-              
-              {(badges.length > 0 ? badges : hardcodedBadges).length === 0 && (
-                <p className="text-gray-500 text-center py-8">No badges earned yet. Keep volunteering to earn your first badge!</p>
-              )}
-            </div>
-            
-            <hr className="my-6" />
-            
-            {/* Feedback Section */}
-            <div>
-              <h3 className="font-semibold mb-4">Feedback Received</h3>
-              {feedback.length > 0 ? (
-                <div className="space-y-4">
-                  {feedback.map((fb, idx) => (
-                    <div key={idx} className="bg-gray-50 rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="font-semibold text-sm">Event ID: {fb.event_id}</span>
-                        <span className="text-yellow-500 font-bold">★ {fb.rating}</span>
-                      </div>
-                      <div className="text-gray-700 mb-2">{fb.comment || 'No comment provided.'}</div>
-                      <div className="text-xs text-gray-500">By: {fb.organizationName}</div>
-                    </div>
-                  ))}
+            ) : (
+              <div className="text-center py-8">
+                <div className="bg-gray-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-3">
+                  <FiAward className="text-gray-400 text-2xl" />
                 </div>
-              ) : (
-                <p className="text-gray-500 text-center py-8">No feedback received yet.</p>
-              )}
-            </div>
+                <p className="text-gray-500">No badges earned yet</p>
+                <p className="text-sm text-gray-400">Keep volunteering to earn your first badge!</p>
+              </div>
+            )}
+          </motion.div>
+
+          {/* Feedback Card */}
+          <motion.div 
+            className="bg-white rounded-lg shadow-sm border border-gray-100 p-6"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.3 }}
+          >
+            <h3 className="text-lg font-semibold mb-4">Recent Feedback</h3>
+            {feedback.length > 0 ? (
+              <div className="space-y-3">
+                {feedback.slice(0, 3).map((fb, idx) => (
+                  <div key={idx} className="bg-gray-50 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-medium text-sm">Event #{fb.event_id}</span>
+                      <div className="flex items-center space-x-1">
+                        {[...Array(5)].map((_, i) => (
+                          <FiStar 
+                            key={i} 
+                            className={`w-4 h-4 ${i < fb.rating ? 'text-yellow-400 fill-current' : 'text-gray-300'}`} 
+                          />
+                        ))}
+                        <span className="text-sm text-gray-600 ml-1">({fb.rating})</span>
+                      </div>
+                    </div>
+                    <p className="text-gray-700 text-sm mb-2">{fb.comment || 'No comment provided.'}</p>
+                    <p className="text-xs text-gray-500">From: {fb.organizationName}</p>
+                  </div>
+                ))}
+                {feedback.length > 3 && (
+                  <div className="text-center pt-2">
+                    <p className="text-sm text-gray-500">And {feedback.length - 3} more feedback(s)</p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <div className="bg-gray-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-3">
+                  <FiStar className="text-gray-400 text-2xl" />
+                </div>
+                <p className="text-gray-500">No feedback received yet</p>
+                <p className="text-sm text-gray-400">Complete events to receive feedback from organizations</p>
+              </div>
+            )}
           </motion.div>
         </div>
       )}

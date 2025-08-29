@@ -75,7 +75,7 @@ const OrganizationSidebar = ({ children }) => {
   
   // Animation variants
   const sidebarVariants = {
-    open: { width: 280, transition: { duration: 0.3 } },
+    open: { width: 280, transition: { duration: 0.005 } },
     closed: { width: 80, transition: { duration: 0.3 } },
     mobileOpen: { x: 0, transition: { duration: 0.3 } },
     mobileClosed: { x: '-100%', transition: { duration: 0.3 } }
@@ -110,7 +110,9 @@ const OrganizationSidebar = ({ children }) => {
           <div className="p-4 border-b border-gray-200">
             <div className="flex items-center space-x-2">
               <span className="font-bold text-2xl">
-                <span className="text-primary">V</span>
+                <span className="text-primary cursor-pointer inline-block hover:brightness-150 hover:drop-shadow-[0_0_8px_rgba(59,130,246,0.6)] transition-all duration-300">
+                  V
+                </span>
                 <span className="text-dark">-Connect</span>
               </span>
             </div>
@@ -167,7 +169,12 @@ const OrganizationSidebar = ({ children }) => {
           <div className="pt-8 pb-6 px-8 border-b border-gray-200">
             <div className="flex items-center space-x-2">
               <span className="font-bold text-3xl">
-                <span className="text-primary">V</span>
+                <span 
+                  className="text-primary cursor-pointer inline-block hover:brightness-150 hover:drop-shadow-[0_0_8px_rgba(59,130,246,0.6)] transition-all duration-300" 
+                  onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                >
+                  V
+                </span>
                 <span className={`text-dark ${!isSidebarOpen ? 'hidden' : 'inline'}`}>-Connect</span>
               </span>
             </div>
@@ -212,25 +219,11 @@ const OrganizationSidebar = ({ children }) => {
             </button>
           </div>
           
-          <div className="p-4 border-t border-gray-200">
-            <button
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="flex items-center justify-center w-full p-2 rounded-md bg-gray-100 hover:bg-gray-200 transition-colors"
-              aria-label={isSidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
-            >
-              {isSidebarOpen ? (
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="15 18 9 12 15 6"></polyline>
-                </svg>
-              ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="9 18 15 12 9 6"></polyline>
-                </svg>
-              )}
-            </button>
-          </div>
+
         </div>
       </motion.div>
+      
+
       
       {/* Main Content */}
       <motion.main 

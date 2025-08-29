@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import LoadingSpinner from '../../components/LoadingSpinner';
-import { FiSave, FiEdit, FiMapPin, FiGlobe, FiCheckCircle, FiInfo, FiUser, FiX } from 'react-icons/fi';
+import { FiSave, FiEdit2, FiMapPin, FiGlobe, FiCheckCircle, FiInfo, FiUser, FiX, FiMail } from 'react-icons/fi';
 import OrganizationSidebar from './OrganizationSidebar';
 
 const OrganizationProfile = () => {
@@ -167,220 +168,208 @@ const OrganizationProfile = () => {
   };
   
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <OrganizationSidebar>
-        <div className="w-full px-4 py-1 sm:px-6 md:px-8 lg:px-10">
-          {/* Main header - always show */}
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
-            <div>
-              <h1 className="text-xl sm:text-2xl font-bold">Organization Profile</h1>
-              {!isLoading && profile.name && (
-                <h2 className="text-lg sm:text-xl text-gray-600 mt-1">{profile.name}</h2>
-              )}
-            </div>
-            
-            {/* Edit button only appears when not loading */}
-            {!isLoading && (
-              <button 
-                onClick={() => setShowEditModal(true)}
-                className="bg-primary text-white py-1 sm:py-2 px-3 sm:px-4 text-sm sm:text-base rounded-md hover:bg-primary/90 transition-colors flex items-center w-max"
-              >
-                <FiEdit className="mr-1 sm:mr-2" /> Edit Profile
-              </button>
-            )}
-          </div>
-          
-          {error && (
-            <div className="bg-red-50 text-red-600 p-4 rounded-md mb-6">
-              {error}
-            </div>
-          )}
-          
+    <OrganizationSidebar>
+      <div className="w-full px-4 py-1 sm:px-6 md:px-8 lg:px-10">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold mb-2">Organization Profile</h1>
+          <p className="text-gray-600">Manage your organization profile and information.</p>
+        </div>
+      
+      {isLoading ? (
+        <LoadingSpinner />
+      ) : error ? (
+        <div className="bg-red-50 p-4 rounded-lg mb-6">
+          <p className="text-red-600">{error}</p>
+        </div>
+      ) : (
+        <div className="space-y-6">
           {saveSuccess && (
             <div className="bg-green-50 text-green-600 p-4 rounded-md mb-6 flex items-center">
               <FiCheckCircle className="mr-2" /> Profile updated successfully!
             </div>
           )}
           
-          {/* Show loading spinner or content */}
-          {isLoading ? (
-            <LoadingSpinner />
-          ) : (
-            <div className="bg-white rounded-lg shadow overflow-hidden w-full">
+          {/* Profile Header Card */}
+          <motion.div 
+            className="bg-white rounded-lg shadow-sm border border-gray-100 p-6"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
             {profile.is_verified && (
-              <div className="bg-green-50 text-green-700 px-4 py-2 flex items-center text-sm border-b">
+              <div className="bg-green-50 text-green-700 px-4 py-2 flex items-center text-sm rounded-md mb-4">
                 <FiCheckCircle className="mr-2" /> This organization is verified
               </div>
             )}
             
-              <div className="p-4 sm:p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-                  <div className="bg-white rounded-lg shadow p-4 sm:p-6">
-                    <div className="flex items-center mb-4">
-                      <div className="w-10 h-10 sm:w-12 sm:h-12 bg-primary/10 rounded-full flex items-center justify-center mr-3">
-                        <FiInfo className="text-primary" size={20} />
-                      </div>
-                      <h3 className="text-lg font-bold">About</h3>
-                    </div>
-                    
-                    <div className="mb-4 pb-3 border-b">
-                      <p className="text-sm text-gray-500 mb-1">Organization Name</p>
-                      <p className="font-medium">
-                        {profile.name || 'Not specified'}
-                      </p>
-                    </div>
-                    
-                    <div className="mb-4">
-                      <p className="text-sm text-gray-500 mb-1">Description</p>
-                      <div>
-                        {profile.description ? (
-                          <p className="whitespace-pre-line">
-                            {profile.description}
-                          </p>
-                        ) : (
-                          <p className="text-gray-500 italic">No description provided.</p>
-                        )}
-                      </div>
-                    </div>
+            <div className="flex justify-between items-start mb-6">
+              <div className="flex items-center space-x-4">
+                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
+                  <FiUser className="text-primary text-xl" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold">{profile.name || 'Loading...'}</h2>
+                  <p className="text-gray-500">Organization</p>
+                  <div className="flex items-center mt-1 text-gray-600">
+                    <FiMail className="mr-2 text-sm" />
+                    <span className="text-sm">{profile.email || 'Not provided'}</span>
                   </div>
-                  
-                  <div className="bg-white rounded-lg shadow p-4 sm:p-6">
-                    <div className="flex items-center mb-4">
-                      <div className="w-10 h-10 sm:w-12 sm:h-12 bg-primary/10 rounded-full flex items-center justify-center mr-3">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
-                          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                          <circle cx="12" cy="7" r="4"></circle>
-                        </svg>
-                      </div>
-                      <h3 className="text-lg font-bold">Contact Information</h3>
-                    </div>
-                    
-                    <div className="space-y-4">
-                      
-                      <div>
-                        <p className="text-sm text-gray-500 mb-1">Address</p>
-                        <div className="flex items-start">
-                          <FiMapPin className="text-yellow-500 mr-2 flex-shrink-0 mt-1" />
-                          <div className="flex-1 break-words">
-                            {profile.address ? (
-                              <p className="whitespace-pre-line text-sm sm:text-base">
-                                {profile.address}
-                              </p>
-                            ) : (
-                              <p className="text-gray-500 italic text-sm sm:text-base">No address provided.</p>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <p className="text-sm text-gray-500 mb-1">Website</p>
-                        <div className="flex items-start">
-                          <FiGlobe className="text-green-500 mr-2 flex-shrink-0 mt-1" />
-                          <div className="flex-1 break-all">
-                            {profile.website ? (
-                              <a 
-                                href={profile.website}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-primary hover:underline text-sm sm:text-base"
-                              >
-                                {profile.website}
-                              </a>
-                            ) : (
-                              <p className="text-gray-500 italic text-sm sm:text-base">No website provided.</p>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowEditModal(true)}
+                className="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary/90 transition-colors flex items-center space-x-2"
+              >
+                <FiEdit2 size={16} />
+                <span>Edit Profile</span>
+              </button>
+            </div>
+          </motion.div>
+
+          {/* About Card */}
+          <motion.div 
+            className="bg-white rounded-lg shadow-sm border border-gray-100 p-6"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.1 }}
+          >
+            <h3 className="text-lg font-semibold mb-4">About</h3>
+            <div>
+              <h4 className="font-bold text-gray-700 mb-2">Description</h4>
+              <p className="text-gray-600">
+                {profile.description || 'No description provided.'}
+              </p>
+            </div>
+          </motion.div>
+
+          {/* Contact Information Card */}
+          <motion.div 
+            className="bg-white rounded-lg shadow-sm border border-gray-100 p-6"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.2 }}
+          >
+            <h3 className="text-lg font-semibold mb-4">Contact Information</h3>
+            <div className="space-y-4">
+              <div>
+                <h4 className="font-bold text-gray-700 mb-2">Address</h4>
+                <div className="flex items-start">
+                  <FiMapPin className="text-yellow-500 mr-2 flex-shrink-0 mt-1" />
+                  <div className="flex-1">
+                    {profile.address ? (
+                      <p className="text-gray-600 whitespace-pre-line">{profile.address}</p>
+                    ) : (
+                      <p className="text-gray-500 italic">No address provided.</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <h4 className="font-bold text-gray-700 mb-2">Website</h4>
+                <div className="flex items-start">
+                  <FiGlobe className="text-green-500 mr-2 flex-shrink-0 mt-1" />
+                  <div className="flex-1">
+                    {profile.website ? (
+                      <a 
+                        href={profile.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary hover:underline break-all"
+                      >
+                        {profile.website}
+                      </a>
+                    ) : (
+                      <p className="text-gray-500 italic">No website provided.</p>
+                    )}
                   </div>
                 </div>
               </div>
             </div>
-          )}
-          
-          {/* Edit Profile Modal */}
-          {showEditModal && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-              <div className="bg-white rounded-xl shadow-lg w-full max-w-lg mx-auto my-8 overflow-hidden">
-                <div className="flex justify-between items-center p-4 sm:p-6 border-b sticky top-0 bg-white z-10">
-                  <h3 className="text-lg font-bold">Edit Organization Profile</h3>
-                  <button 
-                    onClick={() => setShowEditModal(false)}
-                    className="text-gray-500 hover:text-gray-700 text-xl ml-4"
-                  >
-                    <FiX />
-                  </button>
+          </motion.div>
+        </div>
+      )}
+      
+      {/* Edit Profile Modal */}
+      {showEditModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-xl shadow-lg w-full max-w-lg mx-auto my-8 overflow-hidden">
+            <div className="flex justify-between items-center p-4 sm:p-6 border-b sticky top-0 bg-white z-10">
+              <h3 className="text-lg font-bold">Edit Organization Profile</h3>
+              <button 
+                onClick={() => setShowEditModal(false)}
+                className="text-gray-500 hover:text-gray-700 text-xl ml-4"
+              >
+                <FiX />
+              </button>
+            </div>
+            
+            <form onSubmit={handleUpdateProfile} className="p-4 sm:p-6">
+              <div className="grid grid-cols-1 gap-4 sm:gap-6">
+                <div className="mb-3 sm:mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Organization Description
+                  </label>
+                  <textarea 
+                    value={editFormData.description}
+                    onChange={e => setEditFormData({...editFormData, description: e.target.value})}
+                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring focus:ring-primary/50 text-sm sm:text-base"
+                    rows={window.innerWidth < 640 ? "4" : "6"}
+                    placeholder="Describe your organization, its mission, values, and impact..."
+                  />
+                  <p className="text-xs text-gray-500 mt-1">This description will be visible to volunteers and donors.</p>
                 </div>
                 
-                <form onSubmit={handleUpdateProfile} className="p-4 sm:p-6">
-                  <div className="grid grid-cols-1 gap-4 sm:gap-6">
-                    <div className="mb-3 sm:mb-4">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Organization Description
-                      </label>
-                      <textarea 
-                        value={editFormData.description}
-                        onChange={e => setEditFormData({...editFormData, description: e.target.value})}
-                        className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring focus:ring-primary/50 text-sm sm:text-base"
-                        rows={window.innerWidth < 640 ? "4" : "6"}
-                        placeholder="Describe your organization, its mission, values, and impact..."
-                      />
-                      <p className="text-xs text-gray-500 mt-1">This description will be visible to volunteers and donors.</p>
-                    </div>
-                    
-                    <div className="mb-4">
-                      <label className="flex items-center text-sm font-medium text-gray-700 mb-1">
-                        <FiMapPin className="mr-2 text-yellow-500" /> 
-                        Organization Address
-                      </label>
-                      <textarea 
-                        value={editFormData.address}
-                        onChange={e => setEditFormData({...editFormData, address: e.target.value})}
-                        className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring focus:ring-primary/50"
-                        rows="3"
-                        placeholder="Enter your physical address..."
-                      />
-                    </div>
-                    
-                    <div className="mb-6">
-                      <label className="flex items-center text-sm font-medium text-gray-700 mb-1">
-                        <FiGlobe className="mr-2 text-green-500" /> 
-                        Website URL
-                      </label>
-                      <input 
-                        type="url"
-                        value={editFormData.website}
-                        onChange={e => setEditFormData({...editFormData, website: e.target.value})}
-                        className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring focus:ring-primary/50"
-                        placeholder="https://www.example.org"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="flex flex-wrap justify-end gap-2">
-                    <button 
-                      type="button"
-                      onClick={() => setShowEditModal(false)}
-                      className="bg-gray-200 text-gray-700 py-1 sm:py-2 px-3 sm:px-4 text-sm sm:text-base rounded-md hover:bg-gray-300 transition-colors"
-                    >
-                      Cancel
-                    </button>
-                    <button 
-                      type="submit"
-                      className="bg-primary text-white py-1 sm:py-2 px-3 sm:px-4 text-sm sm:text-base rounded-md hover:bg-primary/90 transition-colors flex items-center"
-                    >
-                      <FiSave className="mr-1 sm:mr-2" /> Save Changes
-                    </button>
-                  </div>
-                </form>
+                <div className="mb-4">
+                  <label className="flex items-center text-sm font-medium text-gray-700 mb-1">
+                    <FiMapPin className="mr-2 text-yellow-500" /> 
+                    Organization Address
+                  </label>
+                  <textarea 
+                    value={editFormData.address}
+                    onChange={e => setEditFormData({...editFormData, address: e.target.value})}
+                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring focus:ring-primary/50"
+                    rows="3"
+                    placeholder="Enter your physical address..."
+                  />
+                </div>
+                
+                <div className="mb-6">
+                  <label className="flex items-center text-sm font-medium text-gray-700 mb-1">
+                    <FiGlobe className="mr-2 text-green-500" /> 
+                    Website URL
+                  </label>
+                  <input 
+                    type="url"
+                    value={editFormData.website}
+                    onChange={e => setEditFormData({...editFormData, website: e.target.value})}
+                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring focus:ring-primary/50"
+                    placeholder="https://www.example.org"
+                  />
+                </div>
               </div>
-            </div>
-          )}
+              
+              <div className="flex flex-wrap justify-end gap-2">
+                <button 
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  className="bg-gray-200 text-gray-700 py-1 sm:py-2 px-3 sm:px-4 text-sm sm:text-base rounded-md hover:bg-gray-300 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  className="bg-primary text-white py-1 sm:py-2 px-3 sm:px-4 text-sm sm:text-base rounded-md hover:bg-primary/90 transition-colors flex items-center"
+                >
+                  <FiSave className="mr-1 sm:mr-2" /> Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
-      </OrganizationSidebar>
-    </div>
+      )}
+      </div>
+    </OrganizationSidebar>
   );
 };
 

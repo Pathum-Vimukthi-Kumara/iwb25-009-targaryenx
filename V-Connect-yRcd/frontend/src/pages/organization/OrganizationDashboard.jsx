@@ -141,17 +141,15 @@ const OrganizationDashboard = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <OrganizationSidebar>
-        <div className="w-full px-4 py-1 sm:px-6 md:px-8 lg:px-10">
-          <motion.h1 
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6"
-          >
-            Organization Dashboard
-          </motion.h1>
+    <OrganizationSidebar>
+      <motion.h1 
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6"
+      >
+        Organization Dashboard
+      </motion.h1>
           
           {isLoading ? (
             <LoadingSpinner />
@@ -354,9 +352,7 @@ const OrganizationDashboard = () => {
               </motion.div>
             </motion.div>
           )}
-        </div>
-      </OrganizationSidebar>
-    </div>
+    </OrganizationSidebar>
   );
 };
 
