@@ -1309,6 +1309,18 @@ service /api/admin on mainListener {
     }
 }
 service /pub on mainListener {
+
+    // Public: Get volunteer profile by ID (for orgs to view volunteer details)
+    resource function get volunteers/[int volunteer_id]/profile(http:Caller caller, http:Request req) returns error? {
+        VolunteerProfile|error profile = fetchVolunteerProfile(volunteer_id);
+        if profile is VolunteerProfile {
+            return caller->respond(profile);
+        }
+        http:Response r = new;
+        r.statusCode = http:STATUS_NOT_FOUND;
+        r.setJsonPayload({"error": (<error>profile).message()});
+        return caller->respond(r);
+    }
     resource function get badges/[int badge_id](http:Caller caller, http:Request req) returns error? {
         Badge|error b = getBadge(badge_id);
         if b is Badge {

@@ -820,9 +820,6 @@ const Login = () => {
                 </AnimatePresence>
               </div>
             </div>
-          </div>
-        </div>
-      </main>
       
       <Footer />
     </>

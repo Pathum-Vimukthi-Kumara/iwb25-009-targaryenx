@@ -23,6 +23,29 @@ const OrganizationEvents = () => {
   const [showEventDetails, setShowEventDetails] = useState(false);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [selectedVolunteer, setSelectedVolunteer] = useState(null);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [volunteerProfile, setVolunteerProfile] = useState(null);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
+  // Fetch volunteer profile by ID
+  const handleViewVolunteerProfile = async (volunteerId) => {
+    setIsLoadingProfile(true);
+    setShowProfileModal(true);
+    setVolunteerProfile(null);
+    try {
+      const res = await fetch(`http://localhost:9000/pub/volunteers/${volunteerId}/profile`);
+      if (res.ok) {
+        const data = await res.json();
+        console.log('Volunteer profile data:', data);
+        setVolunteerProfile(data);
+      } else {
+        setVolunteerProfile({ error: 'Profile not found' });
+      }
+    } catch (e) {
+      setVolunteerProfile({ error: 'Failed to load profile' });
+    } finally {
+      setIsLoadingProfile(false);
+    }
+  };
   const navigate = useNavigate();
   
   // Form state for creating/editing events
@@ -89,7 +112,6 @@ const OrganizationEvents = () => {
   const fetchEventApplications = async (eventId) => {
     try {
       const token = localStorage.getItem('token');
-      
       const response = await fetch(`/api/org/events/${eventId}/applications`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -97,29 +119,40 @@ const OrganizationEvents = () => {
         },
         credentials: 'include'
       });
-      
       if (!response.ok) {
         throw new Error('Failed to fetch applications');
       }
-      
       const data = await response.json();
-      console.log('Fetched applications:', data); // Log to see the actual data structure
-      
       // Save a copy of the current applications to help preserve status changes
       const currentApplications = [...eventApplications];
-      
       // Get any stored application statuses from localStorage
       const storedApplications = JSON.parse(localStorage.getItem('applicationStatuses') || '{}');
-      
+
+      // Get all unique volunteer IDs
+      const volunteerIds = [...new Set(data.map(app => app.volunteer_id))];
+      // Fetch volunteer names in parallel
+      const volunteerNames = {};
+      await Promise.all(volunteerIds.map(async (id) => {
+        try {
+          const user = await fetchWithFallback(`/pub/users/${id}`);
+          if (user) {
+            if (!user.name || user.name.trim().toLowerCase() === 'volunteer') {
+              volunteerNames[id] = user.email || `Volunteer #${id}`;
+            } else {
+              volunteerNames[id] = user.name;
+            }
+          } else {
+            volunteerNames[id] = `Volunteer #${id}`;
+          }
+        } catch {
+          volunteerNames[id] = `Volunteer #${id}`;
+        }
+      }));
+
       // Transform the data to ensure it has all required fields
       const processedApplications = data.map(app => {
-        // Find if we have a local version of this application with possibly updated status
         const existingApp = currentApplications.find(existing => existing.application_id === app.application_id);
-        
-        // Check for stored status in localStorage first
         const storedStatus = storedApplications[app.application_id];
-        
-        // Priority: 1. localStorage, 2. existing app state, 3. server status (with mapping)
         let effectiveStatus;
         if (storedStatus) {
           effectiveStatus = storedStatus;
@@ -128,20 +161,14 @@ const OrganizationEvents = () => {
         } else {
           effectiveStatus = app.status === 'accepted' ? 'approved' : (app.status || 'pending');
         }
-        
         return {
           ...app,
-          // Ensure volunteer_name exists - use volunteer_id if name isn't available
-          volunteer_name: app.volunteer_name || `Volunteer #${app.volunteer_id}`,
-          // Use the determined status
+          volunteer_name: volunteerNames[app.volunteer_id] || `Volunteer #${app.volunteer_id}`,
           status: effectiveStatus,
-          // Ensure other required fields
           message: app.message || ''
         };
       });
-      
       setEventApplications(processedApplications);
-      
     } catch (error) {
       console.error('Error fetching applications:', error);
       setError('Failed to load applications. Please try again later.');
@@ -965,6 +992,12 @@ const OrganizationEvents = () => {
                                       <td className="py-2 px-2 sm:px-4 text-xs sm:text-sm">{app.applied_at ? new Date(app.applied_at).toLocaleDateString() : 'N/A'}</td>
                                       <td className="py-2 px-2 sm:px-4 text-xs sm:text-sm whitespace-nowrap">
                                         <button
+                                          onClick={() => handleViewVolunteerProfile(app.volunteer_id)}
+                                          className="bg-gray-100 text-gray-700 px-2 py-1 rounded-md mr-1 sm:mr-2 text-xs hover:bg-gray-200 transition-colors"
+                                        >
+                                          View Profile
+                                        </button>
+                                        <button
                                           onClick={() => handleUpdateApplicationStatus(selectedEvent.event_id, app.application_id, 'approved')}
                                           className="bg-green-100 text-green-700 px-2 py-1 rounded-md mr-1 sm:mr-2 text-xs hover:bg-green-200 transition-colors"
                                         >
@@ -1010,6 +1043,12 @@ const OrganizationEvents = () => {
                                       <td className="py-2 px-2 sm:px-4 text-xs sm:text-sm">{app.applied_at ? new Date(app.applied_at).toLocaleDateString() : 'N/A'}</td>
                                       <td className="py-2 px-2 sm:px-4 text-xs sm:text-sm whitespace-nowrap">
                                         <button
+                                          onClick={() => handleViewVolunteerProfile(app.volunteer_id)}
+                                          className="bg-gray-100 text-gray-700 px-2 py-1 rounded-md mr-1 sm:mr-2 text-xs hover:bg-gray-200 transition-colors"
+                                        >
+                                          View Profile
+                                        </button>
+                                        <button
                                           onClick={() => {
                                             setSelectedVolunteer({
                                               volunteer_id: app.volunteer_id,
@@ -1037,6 +1076,76 @@ const OrganizationEvents = () => {
                           </div>
                         )}
                       </div>
+
+{/* Volunteer Profile Modal (properly moved outside table structure) */}
+{showProfileModal && (
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+    <div className="bg-white rounded-lg shadow-lg w-full max-w-md mx-auto my-8 overflow-hidden">
+      <div className="flex justify-between items-center p-4 sm:p-6 border-b sticky top-0 bg-white z-10">
+        <h3 className="text-lg font-bold truncate">Volunteer Profile</h3>
+        <button 
+          onClick={() => setShowProfileModal(false)} 
+          className="text-gray-500 hover:text-gray-700 text-xl"
+        >
+          &times;
+        </button>
+      </div>
+      <div className="p-4 sm:p-6">
+        {isLoadingProfile ? (
+          <div className="text-center py-8">Loading...</div>
+        ) : (
+          <>
+            {volunteerProfile && !volunteerProfile.error ? (
+              <div>
+                <div className="flex flex-col items-center mb-4">
+                  {volunteerProfile.profile_photo ? (
+                    <img 
+                      src={
+                        volunteerProfile.profile_photo.startsWith('http')
+                          ? volunteerProfile.profile_photo
+                          : `http://localhost:9000${volunteerProfile.profile_photo}`
+                      }
+                      alt="Profile" 
+                      className="w-28 h-28 rounded-full object-cover mb-3 border-4 border-primary shadow-lg" 
+                    />
+                  ) : (
+                    <div className="w-28 h-28 rounded-full bg-gray-200 flex items-center justify-center mb-3 text-gray-400 border-4 border-primary shadow-lg">
+                      <span className="text-3xl">?</span>
+                    </div>
+                  )}
+                  <div className="font-bold text-xl text-gray-900 mb-1">{volunteerProfile.name || 'No Name Provided'}</div>
+                </div>
+                {volunteerProfile.bio && (
+                  <div className="mb-4 text-center text-base text-gray-700 px-2">
+                    <span className="font-semibold text-primary">Bio:</span> {volunteerProfile.bio}
+                  </div>
+                )}
+                {volunteerProfile.skills && (
+                  <div className="mb-2 text-center">
+                    <span className="font-semibold text-primary">Skills:</span>
+                    <div className="flex flex-wrap justify-center gap-2 mt-2">
+                      {volunteerProfile.skills.split(',').map((skill, idx) => (
+                        <span key={idx} className="inline-block bg-primary/10 text-primary font-medium px-3 py-1 rounded-full text-sm shadow-sm border border-primary/20">
+                          {skill.trim()}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {/* Removed raw profile data display as requested */}
+              </div>
+            ) : (
+              <div className="text-center text-red-500 py-8">
+                {volunteerProfile?.error || 'Profile not found.'}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  </div>
+)}
+                     
                       
                       {/* Rejected Applications */}
                       <div>
