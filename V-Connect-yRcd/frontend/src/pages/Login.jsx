@@ -4,6 +4,7 @@ import { FiMail, FiLock, FiUser, FiPhone, FiMapPin, FiGlobe, FiCheck } from 'rea
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import SavingSpinner from '../components/SavingSpinner';
 
 // Import the login and signup images
 import loginImg from '../assets/loginimg.png';
@@ -254,8 +255,8 @@ const Login = () => {
   return (
     <>
       <Navbar />
-      <main className="pt-20 min-h-screen flex flex-col">
-        <div className="flex-grow flex items-center justify-center py-10 px-4 sm:px-6 lg:px-8 bg-gray-50">
+      <main className="pt-16 min-h-screen flex flex-col">
+        <div className="flex-grow flex items-center justify-center py-6 px-4 sm:px-6 lg:px-8 bg-gray-50">
           <div className="max-w-6xl w-full bg-white rounded-xl overflow-hidden shadow-lg min-h-[570px]">
             <div className="flex flex-col md:flex-row">
               {/* Left side - Image */}
@@ -365,13 +366,29 @@ const Login = () => {
                           </div>
                         </div>
                         
-                        <button
+                        <motion.button
                           type="submit"
                           disabled={isLoading}
-                          className="w-full bg-primary hover:bg-primary/90 text-white font-medium py-2.5 px-4 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50"
+                          className="w-full bg-primary hover:bg-primary/90 text-white font-medium py-2.5 px-4 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 flex items-center justify-center min-h-[42px]"
+                          whileHover={!isLoading ? { scale: 1.02 } : {}}
+                          whileTap={!isLoading ? { scale: 0.98 } : {}}
                         >
-                          {isLoading ? 'Logging in...' : 'Log In'}
-                        </button>
+                          <AnimatePresence mode="wait">
+                            {isLoading ? (
+                              <SavingSpinner key="logging-in" message="Logging in..." size="small" />
+                            ) : (
+                              <motion.span
+                                key="login"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                transition={{ duration: 0.15 }}
+                              >
+                                Log In
+                              </motion.span>
+                            )}
+                          </AnimatePresence>
+                        </motion.button>
                         
                         <div className="mt-4 text-center text-sm text-gray-600">
                           Don't have an account?{' '}
@@ -612,13 +629,29 @@ const Login = () => {
                             )}
                           </div>
                           
-                          <button
+                          <motion.button
                             type="submit"
                             disabled={isLoading}
-                            className="w-full bg-primary hover:bg-primary/90 text-white font-medium py-2.5 px-4 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50"
+                            className="w-full bg-primary hover:bg-primary/90 text-white font-medium py-2.5 px-4 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 flex items-center justify-center min-h-[42px]"
+                            whileHover={!isLoading ? { scale: 1.02 } : {}}
+                            whileTap={!isLoading ? { scale: 0.98 } : {}}
                           >
-                            {isLoading ? 'Creating Account...' : 'Sign Up'}
-                          </button>
+                            <AnimatePresence mode="wait">
+                              {isLoading ? (
+                                <SavingSpinner key="creating-account" message="Creating Account..." size="small" />
+                              ) : (
+                                <motion.span
+                                  key="signup"
+                                  initial={{ opacity: 0 }}
+                                  animate={{ opacity: 1 }}
+                                  exit={{ opacity: 0 }}
+                                  transition={{ duration: 0.15 }}
+                                >
+                                  Sign Up
+                                </motion.span>
+                              )}
+                            </AnimatePresence>
+                          </motion.button>
                           
                           <div className="mt-4 text-center text-sm text-gray-600">
                             Already have an account?{' '}
@@ -793,13 +826,29 @@ const Login = () => {
                             </div>
                           </div>
                           
-                          <button
+                          <motion.button
                             type="submit"
                             disabled={isLoading}
-                            className="w-full bg-accent hover:bg-accent/90 text-white font-medium py-2.5 px-4 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent disabled:opacity-50"
+                            className="w-full bg-accent hover:bg-accent/90 text-white font-medium py-2.5 px-4 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent disabled:opacity-50 flex items-center justify-center min-h-[42px]"
+                            whileHover={!isLoading ? { scale: 1.02 } : {}}
+                            whileTap={!isLoading ? { scale: 0.98 } : {}}
                           >
-                            {isLoading ? 'Creating Organization...' : 'Register Organization'}
-                          </button>
+                            <AnimatePresence mode="wait">
+                              {isLoading ? (
+                                <SavingSpinner key="creating-org" message="Creating Organization..." size="small" />
+                              ) : (
+                                <motion.span
+                                  key="register"
+                                  initial={{ opacity: 0 }}
+                                  animate={{ opacity: 1 }}
+                                  exit={{ opacity: 0 }}
+                                  transition={{ duration: 0.15 }}
+                                >
+                                  Register Organization
+                                </motion.span>
+                              )}
+                            </AnimatePresence>
+                          </motion.button>
                           
                           <div className="mt-4 text-center text-sm text-gray-600">
                             Already have an account?{' '}

@@ -12,14 +12,11 @@ import Footer from './components/Footer'
 // Import Page Components
 import AboutPage from './pages/About'
 import AllDonationsPage from './pages/AllDonations'
-import BlogPage from './pages/Blog'
 import ContactPage from './pages/Contact'
 import EventsPage from './pages/Events'
 import FAQsPage from './pages/FAQs'
 import Login from './pages/Login'
 import LearnMorePage from './pages/LearnMore'
-import OrganizationsPage from './pages/Organizations'
-import VolunteerResourcesPage from './pages/VolunteerResources'
 import PrivacyPolicy from './pages/PrivacyPolicy'
 import TermsOfService from './pages/TermsOfService'
 
@@ -113,13 +110,11 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/donations" element={<AllDonationsPage />} />
-        <Route path="/blog" element={<BlogPage />} />
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/events" element={<EventsPage />} />
         <Route path="/faqs" element={<FAQsPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/learn-more" element={<LearnMorePage />} />
-        <Route path="/volunteer-resources" element={<VolunteerResourcesPage />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms-of-service" element={<TermsOfService />} />
         

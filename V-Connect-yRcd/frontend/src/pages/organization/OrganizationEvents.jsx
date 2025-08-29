@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import LoadingSpinner from '../../components/LoadingSpinner';
+import SavingSpinner from '../../components/SavingSpinner';
 import { FiPlus, FiEdit, FiTrash2, FiUsers, FiCalendar, FiMapPin } from 'react-icons/fi';
 import OrganizationSidebar from './OrganizationSidebar';
 import { fetchWithFallback } from '../../utils/apiUtils';
@@ -8,6 +10,9 @@ import { fetchWithFallback } from '../../utils/apiUtils';
 const OrganizationEvents = () => {
   const [events, setEvents] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isCreating, setIsCreating] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -154,6 +159,7 @@ const OrganizationEvents = () => {
   
   const handleCreateEvent = async (e) => {
     e.preventDefault();
+    setIsCreating(true);
     try {
       const token = localStorage.getItem('token');
       const organizationId = localStorage.getItem('user_id');
@@ -190,11 +196,14 @@ const OrganizationEvents = () => {
     } catch (error) {
       console.error('Error creating event:', error);
       setError('Failed to create event. Please try again.');
+    } finally {
+      setIsCreating(false);
     }
   };
   
   const handleEditEvent = async (e) => {
     e.preventDefault();
+    setIsEditing(true);
     try {
       const token = localStorage.getItem('token');
       
@@ -221,6 +230,8 @@ const OrganizationEvents = () => {
     } catch (error) {
       console.error('Error updating event:', error);
       setError('Failed to update event. Please try again.');
+    } finally {
+      setIsEditing(false);
     }
   };
   
@@ -379,6 +390,7 @@ const OrganizationEvents = () => {
 
   const handleSubmitFeedback = async (e) => {
     e.preventDefault();
+    setIsSubmittingFeedback(true);
     try {
       const token = localStorage.getItem('token');
       const organizationId = localStorage.getItem('user_id');
@@ -471,6 +483,8 @@ const OrganizationEvents = () => {
     } catch (error) {
       console.error('Error submitting feedback:', error);
       setError(error.message || 'Failed to submit feedback. Please try again.');
+    } finally {
+      setIsSubmittingFeedback(false);
     }
   };
   
@@ -703,19 +717,40 @@ const OrganizationEvents = () => {
                 </div>
                 
                 <div className="flex justify-end">
-                  <button 
+                  <motion.button 
                     type="button"
                     onClick={() => setShowCreateModal(false)}
                     className="bg-gray-200 text-gray-700 py-2 px-4 rounded-md mr-2 hover:bg-gray-300 transition-colors"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    disabled={isCreating}
                   >
                     Cancel
-                  </button>
-                  <button 
+                  </motion.button>
+                  <motion.button 
                     type="submit"
-                    className="bg-primary text-white py-2 px-4 rounded-md hover:bg-primary/90 transition-colors flex items-center"
+                    className="bg-primary text-white py-2 px-4 rounded-md hover:bg-primary/90 transition-colors flex items-center min-w-[130px] justify-center"
+                    whileHover={!isCreating ? { scale: 1.02 } : {}}
+                    whileTap={!isCreating ? { scale: 0.98 } : {}}
+                    disabled={isCreating}
                   >
-                    <FiPlus className="mr-2" /> Create Event
-                  </button>
+                    <AnimatePresence mode="wait">
+                      {isCreating ? (
+                        <SavingSpinner key="creating" message="Creating..." size="small" />
+                      ) : (
+                        <motion.div
+                          key="create"
+                          className="flex items-center"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 0.15 }}
+                        >
+                          <FiPlus className="mr-2" /> Create Event
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </motion.button>
                 </div>
               </form>
             </div>
@@ -807,19 +842,40 @@ const OrganizationEvents = () => {
                 </div>
                 
                 <div className="flex justify-end">
-                  <button 
+                  <motion.button 
                     type="button"
                     onClick={() => setShowEditModal(false)}
                     className="bg-gray-200 text-gray-700 py-2 px-4 rounded-md mr-2 hover:bg-gray-300 transition-colors"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    disabled={isEditing}
                   >
                     Cancel
-                  </button>
-                  <button 
+                  </motion.button>
+                  <motion.button 
                     type="submit"
-                    className="bg-primary text-white py-2 px-4 rounded-md hover:bg-primary/90 transition-colors flex items-center"
+                    className="bg-primary text-white py-2 px-4 rounded-md hover:bg-primary/90 transition-colors flex items-center min-w-[140px] justify-center"
+                    whileHover={!isEditing ? { scale: 1.02 } : {}}
+                    whileTap={!isEditing ? { scale: 0.98 } : {}}
+                    disabled={isEditing}
                   >
-                    <FiEdit className="mr-2" /> Save Changes
-                  </button>
+                    <AnimatePresence mode="wait">
+                      {isEditing ? (
+                        <SavingSpinner key="saving" message="Saving..." size="small" />
+                      ) : (
+                        <motion.div
+                          key="save"
+                          className="flex items-center"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 0.15 }}
+                        >
+                          <FiEdit className="mr-2" /> Save Changes
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </motion.button>
                 </div>
               </form>
             </div>
@@ -1101,19 +1157,39 @@ const OrganizationEvents = () => {
                 </div>
                 
                 <div className="flex justify-end">
-                  <button 
+                  <motion.button 
                     type="button"
                     onClick={() => setShowFeedbackModal(false)}
                     className="bg-gray-200 text-gray-700 py-2 px-4 rounded-md mr-2 hover:bg-gray-300 transition-colors"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    disabled={isSubmittingFeedback}
                   >
                     Cancel
-                  </button>
-                  <button 
+                  </motion.button>
+                  <motion.button 
                     type="submit"
-                    className="bg-primary text-white py-2 px-4 rounded-md hover:bg-primary/90 transition-colors"
+                    className="bg-primary text-white py-2 px-4 rounded-md hover:bg-primary/90 transition-colors flex items-center min-w-[150px] justify-center"
+                    whileHover={!isSubmittingFeedback ? { scale: 1.02 } : {}}
+                    whileTap={!isSubmittingFeedback ? { scale: 0.98 } : {}}
+                    disabled={isSubmittingFeedback}
                   >
-                    {isEditingFeedback ? 'Update Feedback' : 'Submit Feedback'}
-                  </button>
+                    <AnimatePresence mode="wait">
+                      {isSubmittingFeedback ? (
+                        <SavingSpinner key="submitting" message="Submitting..." size="small" />
+                      ) : (
+                        <motion.span
+                          key="submit"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 0.15 }}
+                        >
+                          {isEditingFeedback ? 'Update Feedback' : 'Submit Feedback'}
+                        </motion.span>
+                      )}
+                    </AnimatePresence>
+                  </motion.button>
                 </div>
               </form>
               )}

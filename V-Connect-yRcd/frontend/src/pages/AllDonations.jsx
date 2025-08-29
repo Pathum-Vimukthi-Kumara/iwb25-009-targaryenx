@@ -157,9 +157,9 @@ const AllDonations = () => {
     <>
       <Navbar scrollY={scrollY} />
       
-      <main className="pt-20">
+      <main className="pt-16">
         {/* Hero Section */}
-        <section className="bg-primary text-white py-16">
+        <section className="bg-primary text-white py-12">
           <div className="container mx-auto px-6">
             <div className="max-w-3xl mx-auto text-center">
               <motion.h1 

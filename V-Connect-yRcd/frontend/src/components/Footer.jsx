@@ -10,8 +10,7 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Logo and Description */}
           <div>
-            <div className="flex items-center space-x-2 mb-4">
-              <img src="/vconnect-logo.svg" alt="V-Connect Logo" className="h-8 w-8 filter brightness-0 invert" />
+            <div className="mb-4">
               <span className="font-bold text-xl">
                 <span className="text-white">V - Connect</span>
               </span>
@@ -41,8 +40,6 @@ const Footer = () => {
             <ul className="space-y-2">
               <li><Link to="/" className="text-gray-300 hover:text-white transition-colors">Home</Link></li>
               <li><Link to="/about" className="text-gray-300 hover:text-white transition-colors">About</Link></li>
-              <li><Link to="/organizations" className="text-gray-300 hover:text-white transition-colors">Organizations</Link></li>
-              <li><Link to="/volunteer-resources" className="text-gray-300 hover:text-white transition-colors">Volunteer Resources</Link></li>
             </ul>
           </div>
 
@@ -51,7 +48,6 @@ const Footer = () => {
             <h3 className="text-lg font-semibold mb-4">Resources</h3>
             <ul className="space-y-2">
               <li><Link to="/faqs" className="text-gray-300 hover:text-white transition-colors">FAQs</Link></li>
-              <li><Link to="/blog" className="text-gray-300 hover:text-white transition-colors">Blog</Link></li>
               <li><Link to="/privacy-policy" className="text-gray-300 hover:text-white transition-colors">Privacy Policy</Link></li>
               <li><Link to="/terms-of-service" className="text-gray-300 hover:text-white transition-colors">Terms of Service</Link></li>
               <li><Link to="/contact" className="text-gray-300 hover:text-white transition-colors">Contact Us</Link></li>
