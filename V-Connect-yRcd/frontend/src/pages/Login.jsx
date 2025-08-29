@@ -29,6 +29,14 @@ const Login = () => {
     }
   }, [location]);
   
+  const defaultSkills = [
+    'Event Planning', 'Teaching/Tutoring', 'Fundraising', 'Community Outreach',
+    'Administrative Support', 'Social Media Management', 'Photography', 'Graphic Design',
+    'Public Speaking', 'Leadership', 'Project Management', 'Customer Service',
+    'Data Entry', 'Research', 'Writing/Editing', 'Translation',
+    'Healthcare Support', 'Environmental Conservation', 'Animal Care', 'Food Service'
+  ];
+
   // Form states
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [volunteerForm, setVolunteerForm] = useState({ 
@@ -38,6 +46,9 @@ const Login = () => {
     confirmPassword: '',
     phone: '',
   });
+  const [selectedSkills, setSelectedSkills] = useState([]);
+  const [customSkill, setCustomSkill] = useState('');
+  const [showCustomInput, setShowCustomInput] = useState(false);
   const [organizationForm, setOrganizationForm] = useState({
     name: '',
     email: '',
@@ -50,6 +61,26 @@ const Login = () => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [formStep, setFormStep] = useState(1); // For multi-step signup forms
+
+  const handleSkillToggle = (skill) => {
+    setSelectedSkills(prev => {
+      const updated = prev.includes(skill) 
+        ? prev.filter(s => s !== skill)
+        : [...prev, skill];
+      setVolunteerForm(prevForm => ({ ...prevForm, skills: updated.join(', ') }));
+      return updated;
+    });
+  };
+
+  const handleCustomSkillAdd = () => {
+    if (customSkill.trim() && !selectedSkills.includes(customSkill.trim())) {
+      const updated = [...selectedSkills, customSkill.trim()];
+      setSelectedSkills(updated);
+      setVolunteerForm(prev => ({ ...prev, skills: updated.join(', ') }));
+      setCustomSkill('');
+      setShowCustomInput(false);
+    }
+  };
 
   // Handle login form submission
   const handleLogin = async (e) => {
@@ -491,17 +522,70 @@ const Login = () => {
                           </div>
                           
                           <div className="mb-6">
-                            <label className="block text-gray-700 text-sm font-medium mb-2" htmlFor="volunteer-skills">
-                              Skills (Optional - comma separated)
-                            </label>
-                            <input
-                              id="volunteer-skills"
-                              type="text"
-                              value={volunteerForm.skills}
-                              onChange={(e) => setVolunteerForm({...volunteerForm, skills: e.target.value})}
-                              className="block w-full py-2.5 px-3 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary"
-                              placeholder="e.g. teaching, first aid, organization"
-                            />
+                            <label className="block text-gray-700 text-sm font-medium mb-2">Skills (Optional)</label>
+                            <div className="border rounded-md p-3 max-h-40 overflow-y-auto">
+                              <div className="grid grid-cols-2 gap-2 mb-3">
+                                {defaultSkills.map(skill => (
+                                  <label key={skill} className="flex items-center space-x-2 cursor-pointer">
+                                    <input
+                                      type="checkbox"
+                                      checked={selectedSkills.includes(skill)}
+                                      onChange={() => handleSkillToggle(skill)}
+                                      className="rounded accent-primary"
+                                    />
+                                    <span className="text-sm">{skill}</span>
+                                  </label>
+                                ))}
+                              </div>
+                              <div className="border-t pt-2">
+                                {!showCustomInput ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => setShowCustomInput(true)}
+                                    className="text-primary text-sm hover:underline"
+                                  >
+                                    + Add custom skill
+                                  </button>
+                                ) : (
+                                  <div className="flex space-x-2">
+                                    <input
+                                      type="text"
+                                      value={customSkill}
+                                      onChange={(e) => setCustomSkill(e.target.value)}
+                                      placeholder="Enter custom skill"
+                                      className="flex-1 px-2 py-1 border rounded text-sm"
+                                      onKeyPress={(e) => e.key === 'Enter' && handleCustomSkillAdd()}
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={handleCustomSkillAdd}
+                                      className="px-2 py-1 bg-primary text-white rounded text-sm"
+                                    >
+                                      Add
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => { setShowCustomInput(false); setCustomSkill(''); }}
+                                      className="px-2 py-1 border rounded text-sm"
+                                    >
+                                      Cancel
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            {selectedSkills.length > 0 && (
+                              <div className="mt-2">
+                                <p className="text-sm text-gray-600 mb-1">Selected skills:</p>
+                                <div className="flex flex-wrap gap-1">
+                                  {selectedSkills.map(skill => (
+                                    <span key={skill} className="bg-primary/10 text-primary px-2 py-1 rounded-full text-xs">
+                                      {skill}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                           </div>
                           
                           <button

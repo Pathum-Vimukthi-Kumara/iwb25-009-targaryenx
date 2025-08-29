@@ -38,6 +38,7 @@ import OrganizationDonations from './pages/organization/OrganizationDonations'
 import OrganizationProfile from './pages/organization/OrganizationProfile'
 
 import VolunteerDashboard from './pages/volunteer/VolunteerDashboard'
+import VolunteerAllEvents from './pages/volunteer/VolunteerAllEvents'
 import VolunteerProfile from './pages/volunteer/VolunteerProfile'
 import VolunteerEvents from './pages/volunteer/VolunteerEvents'
 import VolunteerBadges from './pages/volunteer/VolunteerBadges'
@@ -138,6 +139,7 @@ function App() {
 
 
         <Route path="/volunteer-dashboard" element={<VolunteerDashboard />} />
+        <Route path="/volunteer-all-events" element={<VolunteerAllEvents />} />
         <Route path="/volunteer-profile" element={<VolunteerProfile />} />
         <Route path="/volunteer-events" element={<VolunteerEvents />} />
         <Route path="/volunteer-badges" element={<VolunteerBadges />} />

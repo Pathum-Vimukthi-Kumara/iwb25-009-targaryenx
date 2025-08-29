@@ -536,22 +536,17 @@ const OrganizationEvents = () => {
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {events.map(event => {
                   const eventDate = new Date(event.event_date);
                   const isUpcoming = eventDate >= new Date();
                   
                   return (
-                    <div key={event.event_id} className="bg-white rounded-xl shadow-md overflow-hidden h-full flex flex-col hover:-translate-y-1 transition-transform duration-300">
-                      <div className="bg-purple-50 p-3 sm:p-4 flex justify-center items-center border-b border-purple-100">
-                        <div className="w-12 h-12 sm:w-16 sm:h-16 bg-purple-100 rounded-full flex items-center justify-center">
-                          <FiCalendar size={24} className="text-purple-600 sm:text-3xl" />
-                        </div>
-                      </div>
-                      <div className="p-3 sm:p-5 flex-grow flex flex-col">
-                        <div className="flex justify-between items-start mb-2">
-                          <h3 className="text-lg sm:text-xl font-semibold line-clamp-2">{event.title}</h3>
-                          <div className="flex space-x-2 ml-2">
+                    <div key={event.event_id} className="bg-white rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200 hover:-translate-y-1">
+                      <div className="p-6">
+                        <div className="flex justify-between items-start mb-3">
+                          <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">{event.title}</h3>
+                          <div className="flex space-x-1 ml-2">
                             <button 
                               onClick={() => {
                                 setCurrentEvent(event);
@@ -564,53 +559,48 @@ const OrganizationEvents = () => {
                                 });
                                 setShowEditModal(true);
                               }}
-                              className="text-blue-600 hover:text-blue-800 p-1"
+                              className="text-blue-600 hover:text-blue-800 p-1 rounded"
                             >
                               <FiEdit size={16} />
                             </button>
                             <button 
                               onClick={() => handleDeleteEvent(event.event_id)}
-                              className="text-red-600 hover:text-red-800 p-1"
+                              className="text-red-600 hover:text-red-800 p-1 rounded"
                             >
                               <FiTrash2 size={16} />
                             </button>
                           </div>
                         </div>
                         
-                        <div className="flex items-center text-primary font-medium mb-3 text-sm">
-                          <FiCalendar className="mr-2 text-primary" />
-                          <span>{formatDate(event.event_date)}</span>
-                        </div>
+                        <span className={`text-xs px-2 py-1 rounded-full font-medium mb-4 inline-block ${
+                          isUpcoming ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
+                        }`}>
+                          {isUpcoming ? 'Upcoming' : 'Past'}
+                        </span>
                         
-                        <p className="text-gray-600 mb-4 line-clamp-3">
-                          {event.description}
-                        </p>
+                        <p className="text-gray-600 text-sm mb-4 line-clamp-2">{event.description}</p>
                         
-                        {/* Location Information - Highlighted */}
-                        <div className="border border-primary/20 p-3 sm:p-4 rounded-lg mb-3 sm:mb-4 hover:shadow-md transition-shadow">
-                          <h4 className="font-medium text-primary mb-2 sm:mb-3 text-sm sm:text-base">Event Details:</h4>
-                          <div className="space-y-2">
-                            <div className="flex items-start hover:translate-x-1 transition-transform">
-                              <FiMapPin className="text-primary mr-2 flex-shrink-0 mt-0.5" />
-                              <span className="text-xs sm:text-sm font-medium break-words">{event.location}</span>
-                            </div>
-                            <div className="flex items-center hover:translate-x-1 transition-transform">
-                              <FiUsers className="text-primary mr-2 flex-shrink-0" />
-                              <span className="text-xs sm:text-sm font-medium">{event.required_volunteers} volunteers needed</span>
-                            </div>
+                        <div className="space-y-3 mb-5">
+                          <div className="flex items-center text-sm text-gray-600">
+                            <FiCalendar className="text-gray-400 mr-3" size={16} />
+                            <span className="font-medium">{formatDate(event.event_date)}</span>
+                          </div>
+                          
+                          <div className="flex items-center text-sm text-gray-600">
+                            <FiMapPin className="text-gray-400 mr-3" size={16} />
+                            <span className="truncate">{event.location}</span>
+                          </div>
+                          
+                          <div className="flex items-center text-sm text-gray-600">
+                            <FiUsers className="text-gray-400 mr-3" size={16} />
+                            <span>{event.required_volunteers} volunteers needed</span>
                           </div>
                         </div>
                         
-                        <div className="mt-auto flex justify-between items-center">
-                          <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                            isUpcoming ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                          }`}>
-                            {isUpcoming ? 'Upcoming' : 'Past'}
-                          </span>
-                          
+                        <div className="flex gap-2 pt-4 border-t border-gray-100">
                           <button
                             onClick={() => handleViewEventDetails(event)}
-                            className="text-primary hover:underline font-medium"
+                            className="flex-1 bg-primary/10 text-primary hover:bg-primary/20 px-4 py-2 rounded-lg transition-colors text-sm font-medium"
                           >
                             View Details
                           </button>
