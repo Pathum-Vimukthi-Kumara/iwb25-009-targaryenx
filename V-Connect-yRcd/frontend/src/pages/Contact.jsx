@@ -1,7 +1,8 @@
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useState } from 'react'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
+import SavingSpinner from '../components/SavingSpinner'
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -49,9 +50,9 @@ const Contact = () => {
     <>
       <Navbar scrollY={100} />
       
-      <main className="pt-20">
+      <main className="pt-16">
         {/* Hero Section */}
-        <section className="bg-primary text-white py-16">
+        <section className="bg-primary text-white py-12">
           <div className="container mx-auto px-6">
             <div className="max-w-3xl mx-auto text-center">
               <motion.h1 
@@ -155,13 +156,29 @@ const Contact = () => {
                         </div>
                       )}
                       
-                      <button
+                      <motion.button
                         type="submit"
                         disabled={isSubmitting}
-                        className="btn-primary w-full py-2 px-4 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="btn-primary w-full py-2 px-4 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center min-h-[44px]"
+                        whileHover={!isSubmitting ? { scale: 1.02 } : {}}
+                        whileTap={!isSubmitting ? { scale: 0.98 } : {}}
                       >
-                        {isSubmitting ? 'Sending...' : 'Send Message'}
-                      </button>
+                        <AnimatePresence mode="wait">
+                          {isSubmitting ? (
+                            <SavingSpinner key="sending" message="Sending..." size="small" />
+                          ) : (
+                            <motion.span
+                              key="send"
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              exit={{ opacity: 0 }}
+                              transition={{ duration: 0.15 }}
+                            >
+                              Send Message
+                            </motion.span>
+                          )}
+                        </AnimatePresence>
+                      </motion.button>
                     </form>
                   </motion.div>
                 </div>

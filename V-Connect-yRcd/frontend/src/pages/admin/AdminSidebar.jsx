@@ -33,18 +33,21 @@ const AdminSidebar = ({ children }) => {
     setShowLogoutModal(true);
   };
   
-  // Handle logout
+  // Handle logout with animation
   const handleLogout = () => {
-    // Clear all auth related items from localStorage
-    localStorage.removeItem('token');
-    localStorage.removeItem('user_id');
-    localStorage.removeItem('user_type');
-    
-    // Close the modal
-    setShowLogoutModal(false);
-    
-    // Navigate to login page
-    navigate('/login');
+    // Add a small delay to show the button press animation
+    setTimeout(() => {
+      // Clear all auth related items from localStorage
+      localStorage.removeItem('token');
+      localStorage.removeItem('user_id');
+      localStorage.removeItem('user_type');
+      
+      // Close the modal
+      setShowLogoutModal(false);
+      
+      // Navigate to login page
+      navigate('/login');
+    }, 150);
   };
   
   // Menu items
@@ -85,10 +88,10 @@ const AdminSidebar = ({ children }) => {
   
   // Animation variants
   const sidebarVariants = {
-    open: { width: 280, transition: { duration: 0.005 } },
-    closed: { width: 80, transition: { duration: 0.3 } },
-    mobileOpen: { x: 0, transition: { duration: 0.3 } },
-    mobileClosed: { x: '-100%', transition: { duration: 0.3 } }
+    open: { width: 280, transition: { duration: 0.3, ease: "easeInOut" } },
+    closed: { width: 80, transition: { duration: 0.3, ease: "easeInOut" } },
+    mobileOpen: { x: 0, transition: { duration: 0.3, ease: "easeInOut" } },
+    mobileClosed: { x: '-100%', transition: { duration: 0.3, ease: "easeInOut" } }
   };
   
   const contentVariants = {
@@ -239,10 +242,9 @@ const AdminSidebar = ({ children }) => {
         variants={contentVariants}
         initial="sidebarOpen"
         animate={isSidebarOpen ? "sidebarOpen" : "sidebarClosed"}
-        transition={{ duration: 0.3 }}
       >
         <div className="md:hidden h-16"></div> {/* Space for mobile header */}
-        <div className="w-full px-4 py-4 sm:px-4 md:px-6">
+        <div className="w-full px-4 py-6 sm:px-4 md:px-6 md:py-8 lg:px-8 xl:px-10">
           {children}
         </div>
       </motion.main>
@@ -256,16 +258,16 @@ const AdminSidebar = ({ children }) => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
+              transition={{ duration: 0.15, ease: "easeOut" }}
               className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
               onClick={() => setShowLogoutModal(false)}
             >
               {/* Modal Content */}
               <motion.div
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.9, opacity: 0 }}
-                transition={{ type: "spring", damping: 20 }}
+                initial={{ scale: 0.8, opacity: 0, y: 20 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.8, opacity: 0, y: 20 }}
+                transition={{ type: "spring", stiffness: 300, damping: 25, duration: 0.3 }}
                 className="bg-white rounded-lg shadow-lg max-w-md w-full mx-auto p-6"
                 onClick={(e) => e.stopPropagation()}
               >
@@ -281,18 +283,22 @@ const AdminSidebar = ({ children }) => {
                 </p>
                 
                 <div className="flex justify-end space-x-3">
-                  <button
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
                     className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-300 transition-colors"
                     onClick={() => setShowLogoutModal(false)}
                   >
                     Cancel
-                  </button>
-                  <button
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
                     className="px-4 py-2 text-sm font-medium text-white bg-red-500 rounded-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300 transition-colors"
                     onClick={handleLogout}
                   >
                     Logout
-                  </button>
+                  </motion.button>
                 </div>
               </motion.div>
             </motion.div>

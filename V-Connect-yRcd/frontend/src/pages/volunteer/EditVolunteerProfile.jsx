@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { FiX } from 'react-icons/fi';
+import { motion, AnimatePresence } from 'framer-motion';
+import SavingSpinner from '../../components/SavingSpinner';
 
 const EditVolunteerProfile = ({ profile, onClose, onSave }) => {
   const defaultSkills = [
@@ -229,10 +231,39 @@ const EditVolunteerProfile = ({ profile, onClose, onSave }) => {
             </div>
 
             <div className="flex justify-end space-x-3">
-              <button type="button" onClick={onClose} className="px-4 py-2 border rounded-md">Cancel</button>
-              <button type="submit" className="px-4 py-2 bg-primary text-white rounded-md" disabled={isSubmitting}>
-                {isSubmitting ? "Saving..." : "Save"}
-              </button>
+              <motion.button 
+                type="button" 
+                onClick={onClose} 
+                className="px-4 py-2 border rounded-md hover:bg-gray-50 transition-colors"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                disabled={isSubmitting}
+              >
+                Cancel
+              </motion.button>
+              <motion.button 
+                type="submit" 
+                className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors flex items-center min-w-[100px] justify-center" 
+                disabled={isSubmitting}
+                whileHover={!isSubmitting ? { scale: 1.02 } : {}}
+                whileTap={!isSubmitting ? { scale: 0.98 } : {}}
+              >
+                <AnimatePresence mode="wait">
+                  {isSubmitting ? (
+                    <SavingSpinner key="saving" message="Saving..." size="small" />
+                  ) : (
+                    <motion.span
+                      key="save"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.15 }}
+                    >
+                      Save
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </motion.button>
             </div>
           </form>
         </div>
