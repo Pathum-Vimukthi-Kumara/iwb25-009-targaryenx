@@ -1,4 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import ChatModal from '../../components/ChatModal';
+import ChatNotificationButton from '../../components/ChatNotificationButton';
 import { motion } from 'framer-motion';
 import { FiCalendar, FiMapPin, FiUsers, FiClock, FiAlertCircle, FiSearch } from 'react-icons/fi';
 import DashboardLayout from './DashboardLayout';
@@ -10,6 +12,90 @@ const VolunteerEvents = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Chat modal and chat state
+  const [showChatModal, setShowChatModal] = useState(false);
+  const [chatEvent, setChatEvent] = useState(null);
+  const [chatMessages, setChatMessages] = useState([]);
+  const [chatInput, setChatInput] = useState('');
+  const [chatLoading, setChatLoading] = useState(false);
+  const [chatError, setChatError] = useState(null);
+  const [chatSending, setChatSending] = useState(false);
+  const chatBottomRef = useRef(null);
+
+  // Get volunteerId and name from token
+  let volunteerId = null;
+  let volunteerName = null;
+  try {
+    const token = localStorage.getItem('token');
+    if (token) {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      volunteerId = payload.user_id;
+      volunteerName = payload.name || 'Volunteer';
+    }
+  } catch (e) {}
+
+  // Open chat modal for an event
+  const openChatModal = (event) => {
+    setChatEvent(event);
+    setShowChatModal(true);
+    fetchChatMessages(event.event_id);
+  };
+
+  // Fetch chat messages for an event
+  const fetchChatMessages = async (eventId) => {
+    setChatLoading(true);
+    setChatError(null);
+    try {
+      const token = localStorage.getItem('token');
+      if (!volunteerId || !token) {
+        throw new Error('Authentication required');
+      }
+      // Always use private endpoint for volunteer-organization chat
+      const res = await fetch(`http://localhost:9000/api/chat/events/${eventId}/messages/volunteer/${volunteerId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('Failed to fetch chat messages');
+      const data = await res.json();
+      setChatMessages(data);
+      setTimeout(() => {
+        if (chatBottomRef.current) chatBottomRef.current.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    } catch (err) {
+      setChatError(err.message || 'Failed to load chat');
+    } finally {
+      setChatLoading(false);
+    }
+  };
+
+  // Send chat message
+  const sendChatMessage = async (e) => {
+    e.preventDefault();
+    if (!chatInput.trim() || !chatEvent || !volunteerId) return;
+    setChatSending(true);
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Authentication required');
+      }
+      // Always use private endpoint for volunteer-organization chat
+      const res = await fetch(`http://localhost:9000/api/chat/events/${chatEvent.event_id}/messages/volunteer/${volunteerId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ message: chatInput })
+      });
+      if (!res.ok) throw new Error('Failed to send message');
+      setChatInput('');
+      fetchChatMessages(chatEvent.event_id);
+    } catch (err) {
+      setChatError(err.message || 'Failed to send message');
+    } finally {
+      setChatSending(false);
+    }
+  };
 
   useEffect(() => {
     const fetchMyEvents = async () => {
@@ -171,7 +257,7 @@ const VolunteerEvents = () => {
                       </div>
                     </div>
                     
-                    <div className="flex gap-2 pt-4 border-t border-gray-100">
+                    <div className="flex gap-2 pt-4 border-t border-gray-100 items-center">
                       <div className="flex-1 text-xs text-blue-600">
                         Applied: {formatDate(event.applied_at)}
                       </div>
@@ -183,6 +269,14 @@ const VolunteerEvents = () => {
                       }`}>
                         {event.application_status || 'Unknown'}
                       </div>
+                      {/* Show chat button only for accepted events */}
+                      {event.application_status === 'accepted' && (
+                        <ChatNotificationButton
+                          eventId={event.event_id}
+                          volunteerId={volunteerId}
+                          onClick={() => openChatModal(event)}
+                        />
+                      )}
                     </div>
                   </>
                 ) : (
@@ -198,6 +292,18 @@ const VolunteerEvents = () => {
             </motion.div>
           ))}
         </motion.div>
+      )}
+      
+      {/* Chat Modal */}
+      {showChatModal && chatEvent && (
+        <ChatModal
+          isOpen={showChatModal}
+          onClose={() => setShowChatModal(false)}
+          eventId={chatEvent.event_id}
+          eventTitle={chatEvent.title}
+          volunteerId={volunteerId}
+          volunteerName={volunteerName}
+        />
       )}
     </DashboardLayout>
   );

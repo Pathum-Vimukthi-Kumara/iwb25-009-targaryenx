@@ -1,11 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import SavingSpinner from '../../components/SavingSpinner';
-import { FiPlus, FiEdit, FiTrash2, FiUsers, FiCalendar, FiMapPin } from 'react-icons/fi';
+import { FiPlus, FiEdit, FiTrash2, FiUsers, FiCalendar, FiMapPin, FiMessageCircle } from 'react-icons/fi';
 import OrganizationSidebar from './OrganizationSidebar';
 import { fetchWithFallback } from '../../utils/apiUtils';
+import ChatNotificationButton from '../../components/ChatNotificationButton';
+import ChatModal from '../../components/ChatModal';
 
 const OrganizationEvents = () => {
   const [events, setEvents] = useState([]);
@@ -26,7 +28,90 @@ const OrganizationEvents = () => {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [volunteerProfile, setVolunteerProfile] = useState(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(false);
-  // Fetch volunteer profile by ID
+  // Chat modal state
+  const [showChatModal, setShowChatModal] = useState(false);
+  const [chatVolunteer, setChatVolunteer] = useState(null); // {volunteer_id, name}
+  const [chatMessages, setChatMessages] = useState([]);
+  const [chatLoading, setChatLoading] = useState(false);
+  const [chatError, setChatError] = useState(null);
+  const [chatInput, setChatInput] = useState("");
+  const [chatSending, setChatSending] = useState(false);
+  const chatBottomRef = useRef(null);
+
+  // Fetch chat messages for event/volunteer
+  const openChatModal = async (volunteer) => {
+    console.log('openChatModal called with:', volunteer);
+    console.log('selectedEvent:', selectedEvent);
+    
+    if (!volunteer || !volunteer.volunteer_id || !selectedEvent || !selectedEvent.event_id) {
+      console.error('Invalid parameters:', { volunteer, selectedEvent });
+      setChatError('Invalid chat parameters');
+      return;
+    }
+    
+    setChatVolunteer(volunteer);
+    setShowChatModal(true);
+    setChatMessages([]);
+    setChatError(null);
+    setChatLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const eventId = selectedEvent.event_id;
+      const volunteerId = volunteer.volunteer_id;
+      
+      console.log('Fetching messages for eventId:', eventId, 'volunteerId:', volunteerId);
+      
+      // Use private messaging endpoint
+      const res = await fetch(`http://localhost:9000/api/chat/events/${eventId}/messages/volunteer/${volunteerId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('Failed to fetch messages');
+      const data = await res.json();
+      setChatMessages(Array.isArray(data) ? data : []);
+    } catch (e) {
+      console.error('Chat fetch error:', e);
+      setChatError('Failed to load chat messages.');
+    } finally {
+      setChatLoading(false);
+      setTimeout(() => {
+        if (chatBottomRef.current) chatBottomRef.current.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    }
+  };
+
+  // Send a new chat message
+  const sendChatMessage = async (e) => {
+    e.preventDefault();
+    if (!chatInput.trim()) return;
+    setChatSending(true);
+    setChatError(null);
+    try {
+      const token = localStorage.getItem('token');
+      const eventId = selectedEvent.event_id;
+      // Use private messaging endpoint
+      const res = await fetch(`http://localhost:9000/api/chat/events/${eventId}/messages/volunteer/${chatVolunteer.volunteer_id}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          message: chatInput.trim()
+        })
+      });
+      if (!res.ok) throw new Error('Failed to send message');
+      setChatInput("");
+      // Re-fetch messages after sending
+      await openChatModal(chatVolunteer);
+    } catch (e) {
+      setChatError('Failed to send message.');
+    } finally {
+      setChatSending(false);
+      setTimeout(() => {
+        if (chatBottomRef.current) chatBottomRef.current.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    }
+  };
   const handleViewVolunteerProfile = async (volunteerId) => {
     setIsLoadingProfile(true);
     setShowProfileModal(true);
@@ -1050,6 +1135,20 @@ const OrganizationEvents = () => {
                                         </button>
                                         <button
                                           onClick={() => {
+                                            console.log('Chat button clicked for volunteer:', app.volunteer_id, app.volunteer_name);
+                                            if (!app.volunteer_id || app.volunteer_id === null) {
+                                              console.error('Invalid volunteer_id:', app.volunteer_id);
+                                              return;
+                                            }
+                                            openChatModal({ volunteer_id: app.volunteer_id, name: app.volunteer_name });
+                                          }}
+                                          className="bg-blue-100 text-blue-700 px-2 py-1 rounded-md mr-1 sm:mr-2 text-xs hover:bg-blue-200 transition-colors flex items-center"
+                                        >
+                                          <FiMessageCircle className="mr-1" size={12} />
+                                          View Messages
+                                        </button>
+                                        <button
+                                          onClick={() => {
                                             setSelectedVolunteer({
                                               volunteer_id: app.volunteer_id,
                                               name: app.volunteer_name || `Volunteer #${app.volunteer_id}`
@@ -1305,6 +1404,15 @@ const OrganizationEvents = () => {
             </div>
           </div>
         )}
+        {/* Chat Modal */}
+        <ChatModal 
+          isOpen={showChatModal}
+          onClose={() => setShowChatModal(false)}
+          eventId={selectedEvent?.event_id}
+          eventTitle={selectedEvent?.title}
+          volunteerId={chatVolunteer?.volunteer_id}
+          volunteerName={chatVolunteer?.name}
+        />
         </div>
       </OrganizationSidebar>
     </div>

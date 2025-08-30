@@ -1,25 +1,6 @@
 // Get all events (public API helper)
 
 import ballerina/sql;
-
-function getAllEvents() returns OrgEvent[]|error {
-    OrgEvent[] events = [];
-    stream<OrgEvent, sql:Error?> resultStream = dbClient->query(`SELECT event_id, organization_id, title, description, location, event_date, start_time, end_time, required_volunteers, status, created_at FROM events`);
-    while true {
-        record {|OrgEvent value;|}|sql:Error? n = resultStream.next();
-        if n is record {|OrgEvent value;|} {
-            events.push(n.value);
-            continue;
-        }
-        break;
-    }
-    sql:Error? closeErr = resultStream.close();
-    if closeErr is error {
-        return closeErr;
-    }
-    return events;
-}
-
 type OrgProfile record {|
     int organization_id?;
     string description;
@@ -41,6 +22,14 @@ type OrgEvent record {|
     string? status;
     string? created_at?;
 |};
+type EventApplication record {|
+    int application_id?;
+    int volunteer_id;
+    int event_id;
+    string? application_status?; // pending | accepted | rejected
+    string? applied_at?;
+|};
+
 
 // Request payload for creating an event (eventId optional)
 type EventCreateRequest record {|
@@ -62,6 +51,8 @@ type OrgDonation record {|
     decimal amount;
     string orgId;
 |};
+
+
 
 // Donation request table mapping
 type DonationRequest record {|
@@ -130,6 +121,8 @@ type FeedbackUpdate record {|
     anydata...; // allow extra fields (event_id, volunteer_id, etc.) without binding errors
 |};
 
+
+
 // Typed error for not found scenarios
 type NotFoundError error<record {string message;}>;
 
@@ -138,6 +131,24 @@ type NotFoundError error<record {string message;}>;
 /// Get organization profile by id.
 /// @param id organization id
 /// @return OrgProfile or error
+function getAllEvents() returns OrgEvent[]|error {
+    OrgEvent[] events = [];
+    stream<OrgEvent, sql:Error?> resultStream = dbClient->query(`SELECT event_id, organization_id, title, description, location, event_date, start_time, end_time, required_volunteers, status, created_at FROM events`);
+    while true {
+        record {|OrgEvent value;|}|sql:Error? n = resultStream.next();
+        if n is record {|OrgEvent value;|} {
+            events.push(n.value);
+            continue;
+        }
+        break;
+    }
+    sql:Error? closeErr = resultStream.close();
+    if closeErr is error {
+        return closeErr;
+    }
+    return events;
+}
+
 
 function getOrgProfile(int id) returns OrgProfile|error {
     stream<OrgProfile, sql:Error?> s = dbClient->query(`SELECT organization_id, description, address, website, is_verified FROM organization_profiles WHERE organization_id = ${id}`);
@@ -878,23 +889,7 @@ function deleteBadge(int id) returns string|error {
     return error("NotFound", message = "Badge not found");
 }
 
-// ====================== Event Applications ==========================
-// Expected DB table:
-// CREATE TABLE event_applications (
-//   application_id INT AUTO_INCREMENT PRIMARY KEY,
-//   volunteer_id INT NOT NULL,
-//   event_id INT NOT NULL,
-//   status VARCHAR(20) DEFAULT 'pending',
-//   applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-//   UNIQUE KEY uniq_vol_event (volunteer_id, event_id)
-// );
-type EventApplication record {|
-    int application_id?;
-    int volunteer_id;
-    int event_id;
-    string? application_status?; // pending | accepted | rejected
-    string? applied_at?;
-|};
+
 
 // Fetch single application for volunteer+event
 function getEventApplicationByVolunteerAndEvent(int volunteerId, int eventId) returns EventApplication|error {
