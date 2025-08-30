@@ -86,6 +86,7 @@ function upsertVolunteerProfile(int id, VolunteerProfileUpdate upd) returns Volu
     return fetchVolunteerProfile(id);
 }
 
+
 // List top volunteers aggregated from feedback. Sorting param can be hours (default) or rating.
 function computeTopVolunteers(string sortBy, int maxCount) returns VolunteerRanking[]|error {
     VolunteerRanking[] list = [];

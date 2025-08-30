@@ -118,6 +118,7 @@ const EditVolunteerProfile = ({ profile, onClose, onSave }) => {
       const updatedProfile = await response.json();
       console.log('Updated profile response:', updatedProfile);
       onSave(updatedProfile);
+      alert("Profile updated successfully");
       localStorage.setItem("profile", JSON.stringify(updatedProfile));
       onClose();
     } catch (err) {
