@@ -33,8 +33,8 @@ const Navbar = ({ scrollY }) => {
     return () => window.removeEventListener('resize', updateLoginBtnWidth);
   }, []);
 
-  const navbarClasses = `fixed top-0 left-0 right-0 z-50 py-3 transition-all duration-300 w-full ${
-    isScrolled || !isHomePage ? 'bg-white shadow-md py-2' : 'bg-transparent'
+  const navbarClasses = `fixed top-0 left-0 right-0 z-50 transition-all duration-300 w-full ${
+    isScrolled || !isHomePage ? 'bg-white shadow-md py-2' : 'bg-transparent py-3'
   }`
 
   // Close menu when clicking outside

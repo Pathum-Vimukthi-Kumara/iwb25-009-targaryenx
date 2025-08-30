@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
@@ -43,9 +43,9 @@ const FAQs = () => {
     <>
       <Navbar scrollY={100} />
       
-      <main className="pt-20">
+      <main className="pt-16">
         {/* Hero Section */}
-        <section className="bg-primary text-white py-16">
+        <section className="bg-primary text-white py-12">
           <div className="container mx-auto px-6">
             <div className="max-w-3xl mx-auto text-center">
               <motion.h1 
@@ -91,17 +91,21 @@ const FAQs = () => {
                       </span>
                     </button>
                     
-                    {openFaqs.includes(index) && (
-                      <motion.div 
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: "auto", opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.3 }}
-                        className="p-4 bg-gray-50 border-t border-gray-200"
-                      >
-                        <p className="text-gray-600">{faq.answer}</p>
-                      </motion.div>
-                    )}
+                    <AnimatePresence>
+                      {openFaqs.includes(index) && (
+                        <motion.div 
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.3, ease: "easeInOut" }}
+                          className="overflow-hidden"
+                        >
+                          <div className="p-4 bg-gray-50 border-t border-gray-200">
+                            <p className="text-gray-600">{faq.answer}</p>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </motion.div>
                 ))}
               </div>

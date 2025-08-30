@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import LoadingSpinner from '../../components/LoadingSpinner';
+import SavingSpinner from '../../components/SavingSpinner';
 import { FiSave, FiEdit2, FiMapPin, FiGlobe, FiCheckCircle, FiInfo, FiUser, FiX, FiMail } from 'react-icons/fi';
 import OrganizationSidebar from './OrganizationSidebar';
 
@@ -23,6 +24,7 @@ const OrganizationProfile = () => {
   });
   const [showEditModal, setShowEditModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const navigate = useNavigate();
@@ -121,6 +123,7 @@ const OrganizationProfile = () => {
   
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
+    setIsSaving(true);
     try {
       const token = localStorage.getItem('token');
       const organizationId = localStorage.getItem('user_id');
@@ -164,6 +167,8 @@ const OrganizationProfile = () => {
     } catch (error) {
       console.error('Error updating profile:', error);
       setError('Failed to update profile. Please try again.');
+    } finally {
+      setIsSaving(false);
     }
   };
   
@@ -350,19 +355,40 @@ const OrganizationProfile = () => {
               </div>
               
               <div className="flex flex-wrap justify-end gap-2">
-                <button 
+                <motion.button 
                   type="button"
                   onClick={() => setShowEditModal(false)}
                   className="bg-gray-200 text-gray-700 py-1 sm:py-2 px-3 sm:px-4 text-sm sm:text-base rounded-md hover:bg-gray-300 transition-colors"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  disabled={isSaving}
                 >
                   Cancel
-                </button>
-                <button 
+                </motion.button>
+                <motion.button 
                   type="submit"
-                  className="bg-primary text-white py-1 sm:py-2 px-3 sm:px-4 text-sm sm:text-base rounded-md hover:bg-primary/90 transition-colors flex items-center"
+                  className="bg-primary text-white py-1 sm:py-2 px-3 sm:px-4 text-sm sm:text-base rounded-md hover:bg-primary/90 transition-colors flex items-center min-w-[140px] justify-center"
+                  whileHover={!isSaving ? { scale: 1.02 } : {}}
+                  whileTap={!isSaving ? { scale: 0.98 } : {}}
+                  disabled={isSaving}
                 >
-                  <FiSave className="mr-1 sm:mr-2" /> Save Changes
-                </button>
+                  <AnimatePresence mode="wait">
+                    {isSaving ? (
+                      <SavingSpinner key="saving" message="Saving..." size="small" />
+                    ) : (
+                      <motion.div
+                        key="save"
+                        className="flex items-center"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.15 }}
+                      >
+                        <FiSave className="mr-1 sm:mr-2" /> Save Changes
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.button>
               </div>
             </form>
           </div>
