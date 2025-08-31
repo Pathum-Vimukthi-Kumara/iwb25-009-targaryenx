@@ -32,9 +32,6 @@ V-Connect is a modern web platform designed to connect volunteers, organizations
 
 ---
 
-
----
-
 ## Tech Stack
 
 ### Frontend
