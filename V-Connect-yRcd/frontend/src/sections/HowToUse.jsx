@@ -391,17 +391,19 @@ const HowToUse = () => {
             whileInView="visible"
             viewport={{ once: false }}
           >
-            <motion.button 
-              className="bg-white text-primary hover:bg-gray-100 py-3 px-8 rounded-md font-medium transition-colors duration-300"
-              whileHover={{ 
-                scale: 1.02, 
-                boxShadow: "0 3px 6px -2px rgba(255, 255, 255, 0.15)"
-              }}
-              whileTap={{ scale: 0.98 }}
-              variants={itemVariants}
-            >
-              Sign Up Now
-            </motion.button>
+            <Link to="/login">
+              <motion.button 
+                className="bg-white text-primary hover:bg-gray-100 py-3 px-8 rounded-md font-medium transition-colors duration-300"
+                whileHover={{ 
+                  scale: 1.02, 
+                  boxShadow: "0 3px 6px -2px rgba(255, 255, 255, 0.15)"
+                }}
+                whileTap={{ scale: 0.98 }}
+                variants={itemVariants}
+              >
+                Sign Up Now
+              </motion.button>
+            </Link>
             <Link to="/learn-more">
               <motion.button 
                 className="border border-white bg-transparent hover:bg-white/10 py-3 px-8 rounded-md font-medium transition-colors duration-300"

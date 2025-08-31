@@ -34,7 +34,7 @@ const Navbar = ({ scrollY }) => {
   }, []);
 
   const navbarClasses = `fixed top-0 left-0 right-0 z-50 transition-all duration-300 w-full ${
-    isScrolled || !isHomePage ? 'bg-white shadow-md py-2' : 'bg-transparent py-3'
+    isScrolled || !isHomePage ? 'bg-white shadow-md py-4' : 'bg-transparent py-5'
   }`
 
   // Close menu when clicking outside

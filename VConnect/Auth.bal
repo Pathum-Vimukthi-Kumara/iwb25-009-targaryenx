@@ -36,10 +36,14 @@ type User record {
     boolean is_active?;
 };
 
-sql:ConnectionPool poolOptions = {
-    maxOpenConnections: dbConfig.connectionPool.maxOpenConnections,
-    minIdleConnections: dbConfig.connectionPool.minIdleConnections,
-    maxConnectionLifeTime: dbConfig.connectionPool.maxConnectionLifeTime
+// Minimal payload for login to avoid requiring user_type/name
+type LoginRequest record {
+    string email;
+    string password;
+};
+
+type UserIdRecord record {
+    int user_id;
 };
 
 configurable DbConfig dbConfig = ?;

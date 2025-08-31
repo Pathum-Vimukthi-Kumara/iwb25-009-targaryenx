@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useInView } from 'react-intersection-observer'
 import { FiChevronLeft, FiChevronRight, FiStar } from 'react-icons/fi'
+import { Link } from 'react-router-dom'
 
 const Testimonials = () => {
   const [ref, inView] = useInView({
@@ -200,20 +201,24 @@ const Testimonials = () => {
             Start your volunteer journey with V-Connect today.
           </p>
           <div className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
-            <motion.button 
-              className="bg-white text-primary hover:bg-gray-100 py-3 px-8 rounded-md font-medium transition-colors duration-300"
-              whileHover={{ scale: 1.05, boxShadow: "0px 5px 15px rgba(255, 255, 255, 0.3)" }}
-              whileTap={{ scale: 0.95 }}
-            >
-              Join as Volunteer
-            </motion.button>
-            <motion.button 
-              className="bg-transparent border-2 border-white text-white hover:bg-white hover:text-primary py-3 px-8 rounded-md font-medium transition-colors duration-300"
-              whileHover={{ scale: 1.05, boxShadow: "0px 5px 15px rgba(255, 255, 255, 0.2)" }}
-              whileTap={{ scale: 0.95 }}
-            >
-              Register Organization
-            </motion.button>
+            <Link to="/login?type=volunteer">
+              <motion.button 
+                className="bg-white text-primary hover:bg-gray-100 py-3 px-8 rounded-md font-medium transition-colors duration-300"
+                whileHover={{ scale: 1.05, boxShadow: "0px 5px 15px rgba(255, 255, 255, 0.3)" }}
+                whileTap={{ scale: 0.95 }}
+              >
+                Join as Volunteer
+              </motion.button>
+            </Link>
+            <Link to="/login?type=organization">
+              <motion.button 
+                className="bg-transparent border-2 border-white text-white hover:bg-white hover:text-primary py-3 px-8 rounded-md font-medium transition-colors duration-300"
+                whileHover={{ scale: 1.05, boxShadow: "0px 5px 15px rgba(255, 255, 255, 0.2)" }}
+                whileTap={{ scale: 0.95 }}
+              >
+                Register Organization
+              </motion.button>
+            </Link>
           </div>
         </motion.div>
       </div>

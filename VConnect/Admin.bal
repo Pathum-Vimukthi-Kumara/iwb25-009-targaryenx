@@ -79,7 +79,8 @@ function listVolunteerContributionsForEvent(int eventId) returns VolunteerContri
 }
 
 // Offering badges
-  public function createBadge(BadgeCreate b) returns Badge|error {
+
+public function createBadge(BadgeCreate b) returns Badge|error {
     if b.volunteer_id <= 0 {
         return error("ValidationError", message = "volunteer_id required");
     }
@@ -87,6 +88,8 @@ function listVolunteerContributionsForEvent(int eventId) returns VolunteerContri
     if name == "" {
         return error("ValidationError", message = "badge_name required");
     }
+
+    // Validate volunteer exists
     stream<record {|int uid;|}, sql:Error?> vs = dbClient->query(
         `SELECT user_id as uid FROM users WHERE user_id = ${b.volunteer_id}`
     );

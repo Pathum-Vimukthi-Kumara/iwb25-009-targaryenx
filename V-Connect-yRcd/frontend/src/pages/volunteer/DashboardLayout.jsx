@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { 
   FiHome, FiUsers, FiCalendar, FiUser, FiLogOut, 
   FiSettings, FiPlusCircle, FiHeart, FiAward, FiMenu, FiX, FiAlertCircle 
+
 } from 'react-icons/fi';
 
 const DashboardLayout = ({ children, userType = 'volunteer' }) => {
@@ -12,13 +13,14 @@ const DashboardLayout = ({ children, userType = 'volunteer' }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const currentPath = location.pathname;
-  
+
   // Function to handle logout
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('userId');
     localStorage.removeItem('userType');
     navigate('/login');
+
   };
   
   // Define menu items based on user type
@@ -180,8 +182,11 @@ const DashboardLayout = ({ children, userType = 'volunteer' }) => {
         <div className="flex flex-col h-full">
           <div className="p-4 border-b border-gray-200">
             <div className="flex items-center space-x-2">
+
+
               <span className="font-bold text-xl">
                 <span className="text-primary">V</span>
+
                 <span className="text-dark">-Connect</span>
               </span>
             </div>
@@ -278,7 +283,7 @@ const DashboardLayout = ({ children, userType = 'volunteer' }) => {
               {isSidebarOpen && <span>Logout</span>}
             </button>
           </div>
-          
+
           <div className="p-4 border-t border-gray-200">
             <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -296,6 +301,7 @@ const DashboardLayout = ({ children, userType = 'volunteer' }) => {
               )}
             </button>
           </div>
+
         </div>
       </motion.div>
       

@@ -1,0 +1,36 @@
+.loader {
+  width: fit-content;
+  font-size: 40px;
+  font-family: 'Inter', sans-serif;
+  font-weight: bold;
+  text-transform: uppercase;
+  color: transparent;
+  -webkit-text-stroke: 1px #3b82f6;
+  --g: conic-gradient(#3b82f6 0 0) no-repeat text;
+  background: var(--g) 0, var(--g) 1ch, var(--g) 2ch, var(--g) 3ch, var(--g) 4ch, var(--g) 5ch, var(--g) 6ch, var(--g) 7ch, var(--g) 8ch;
+  animation: 
+    loader-fill 2s linear infinite alternate,
+    loader-position 4s linear infinite;
+}
+
+.loader:before {
+  content: "V-Connect";
+}
+
+@keyframes loader-fill {
+  0%     { background-size: 1ch 0%, 1ch 0%, 1ch 0%, 1ch 0%, 1ch 0%, 1ch 0%, 1ch 0%, 1ch 0%, 1ch 0% }
+  11.11% { background-size: 1ch 100%, 1ch 50%, 1ch 0%, 1ch 0%, 1ch 0%, 1ch 0%, 1ch 0%, 1ch 0%, 1ch 0% }
+  22.22% { background-size: 1ch 100%, 1ch 100%, 1ch 50%, 1ch 0%, 1ch 0%, 1ch 0%, 1ch 0%, 1ch 0%, 1ch 0% }
+  33.33% { background-size: 1ch 100%, 1ch 100%, 1ch 100%, 1ch 50%, 1ch 0%, 1ch 0%, 1ch 0%, 1ch 0%, 1ch 0% }
+  44.44% { background-size: 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 50%, 1ch 0%, 1ch 0%, 1ch 0%, 1ch 0% }
+  55.55% { background-size: 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 50%, 1ch 0%, 1ch 0%, 1ch 0% }
+  66.66% { background-size: 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 50%, 1ch 0%, 1ch 0% }
+  77.77% { background-size: 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 50%, 1ch 0% }
+  88.88% { background-size: 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 50% }
+  100%   { background-size: 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100%, 1ch 100% }
+}
+
+@keyframes loader-position {
+  0%, 50%    { background-position-y: 100% }
+  50.01%, to { background-position-y: 0% }
+}
