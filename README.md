@@ -71,7 +71,7 @@ cd VConnect-TargaryenX
 
 ### 3. Backend Setup (Ballerina)
 ```sh
-cd VConnect
+cd Backend
 bal build
 bal run
 ```
@@ -79,7 +79,7 @@ bal run
 
 ### 4. Frontend Setup (React)
 ```sh
-cd V-Connect-yRcd/frontend
+cd Frontend/frontend
 npm install
 npm run dev
 ```
