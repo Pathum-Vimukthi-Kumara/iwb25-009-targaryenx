@@ -1,4 +1,33 @@
-# V-Connect Frontend – Backend Integration Guide  
+# V-Connect Frontend – Backend Integration Guide
+
+## Overview
+
+V-Connect is a modern web platform designed to connect volunteers, organizations, and administrators for event management, communication, and collaboration. The backend is built using **Ballerina**, a cloud-native programming language optimized for integration, APIs, and distributed systems.
+
+---
+
+## Architecture
+
+### High-Level Architecture
+
+- **Frontend:** React (Vite) SPA for volunteers, organizations, and admin dashboards.
+- **Backend:** Ballerina microservices exposing RESTful APIs for authentication, chat, events, applications, donations, feedback, and more.
+- **Database:** SQL-based persistent storage (accessed via Ballerina’s SQL module).
+- **Authentication:** JWT-based authentication and authorization for secure access.
+- **Deployment:** Easily containerized and deployable on any cloud or on-premises infrastructure.
+
+### Service Structure
+
+- `/api/org` — Organization management (profiles, events, applications, donations, feedback)
+- `/api/vol` — Volunteer management (applications, badges, rankings)
+- `/api/volunteers` — Volunteer profile and badge endpoints
+- `/api/admin` — Admin-only endpoints (user management, badge awarding, event contributions)
+- `/api/chat` — Event and private chat between organizations and volunteers
+- `/api/auth` — Registration and login
+- `/api/contact` — Contact and support messages
+- `/pub` — Public endpoints (events, organizations, feedback, donations)
+- `/uploads` — Static file serving for uploaded images
+
 ---
 
 ## 🛠 Tech Stack  
