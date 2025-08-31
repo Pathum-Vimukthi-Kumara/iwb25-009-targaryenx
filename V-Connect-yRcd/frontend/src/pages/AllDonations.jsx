@@ -397,12 +397,6 @@ const AllDonations = () => {
             </motion.div>
           </div>
         </motion.section>
-      </main>
-<<<<<<< Updated upstream
-
-=======
-    
->>>>>>> Stashed changes
       <Footer />
     </>
   );

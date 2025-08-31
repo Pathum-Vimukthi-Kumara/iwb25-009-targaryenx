@@ -1,3 +1,4 @@
+
 import ballerina/http;
 import ballerina/io;
 import ballerina/jwt;
@@ -5,6 +6,12 @@ import ballerina/log;
 import ballerina/mime;
 import ballerina/sql;
 import ballerina/time;
+
+
+
+
+
+
 
 // Shared validator config (HS256) matching the issuer side in generateJwt()
 final jwt:ValidatorConfig validatorConfig = {
@@ -14,23 +21,15 @@ final jwt:ValidatorConfig validatorConfig = {
     signatureConfig: {secret: JWT_SECRET}
 };
 
-function validateAuth(http:Request req, http:Caller caller) returns error? {
+function validateAuth(http:Request req) returns error? {
     string authHeader = check req.getHeader("Authorization");
     if !authHeader.startsWith("Bearer ") {
-        http:Response r = new;
-        r.statusCode = http:STATUS_UNAUTHORIZED;
-        r.setJsonPayload({"error": "Missing Bearer token"});
-        _ = check caller->respond(r);
-        return ();
+        return error("Missing Bearer token");
     }
     string jwtToken = authHeader.substring(7);
     jwt:Payload|jwt:Error v = jwt:validate(jwtToken, validatorConfig);
     if v is jwt:Error {
-        log:printError("JWT validation failed", 'error = v);
-        http:Response r = new;
-        r.statusCode = http:STATUS_UNAUTHORIZED;
-        r.setJsonPayload({"error": v.message()});
-        _ = check caller->respond(r);
+        return error(v.message());
     }
     return ();
 }
@@ -76,7 +75,7 @@ listener http:Listener mainListener = new (9000);
 @http:ServiceConfig {
     cors: {
         // must be a specific origin if credentials are allowed
-        allowOrigins: ["http://localhost:5173"],
+        allowOrigins: ["http://localhost:5173", "http://localhost:5174"],
         allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
         // list the exact headers your frontend sends
         allowHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
@@ -86,11 +85,23 @@ listener http:Listener mainListener = new (9000);
     }
 }
 service /api/org on mainListener {
+    // Handle OPTIONS preflight requests
+    resource function options .(http:Caller caller, http:Request req) returns error? {
+        http:Response response = new;
+        response.setHeader("Access-Control-Allow-Origin", "*");
+        response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
+        response.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
+        response.statusCode = http:STATUS_NO_CONTENT;
+        return caller->respond(response);
+    }
     // Organization updates the status of a volunteer's application for their event
     resource function patch events/[int event_id]/applications/[int application_id]/status(http:Caller caller, http:Request req) returns error? {
-        error? vErr = validateAuth(req, caller);
+        error? vErr = validateAuth(req);
         if vErr is error {
-            return;
+            http:Response r = new;
+            r.statusCode = http:STATUS_UNAUTHORIZED;
+            r.setJsonPayload({"error": vErr.message()});
+            return caller->respond(r);
         }
         // Check that the caller is the organization that owns the event or admin
         int owningOrg = -1;
@@ -166,9 +177,19 @@ service /api/org on mainListener {
     }
 
     resource function get profile/[int id](http:Caller caller, http:Request req) returns error? {
-        error? vErr = validateAuth(req, caller);
+        if id <= 0 {
+            http:Response r = new;
+            r.statusCode = http:STATUS_BAD_REQUEST;
+            r.setJsonPayload({"error": "Invalid organization ID"});
+            return caller->respond(r);
+        }
+        
+        error? vErr = validateAuth(req);
         if vErr is error {
-            return;
+            http:Response r = new;
+            r.statusCode = http:STATUS_UNAUTHORIZED;
+            r.setJsonPayload({"error": vErr.message()});
+            return caller->respond(r);
         }
         error? ownErr = ensureOrgOrAdmin(req, id);
         if ownErr is error {
@@ -203,9 +224,12 @@ service /api/org on mainListener {
     }
 
     resource function post profile(OrgProfile body, http:Caller caller, http:Request req) returns error? {
-        error? vErr = validateAuth(req, caller);
+        error? vErr = validateAuth(req);
         if vErr is error {
-            return;
+            http:Response r = new;
+            r.statusCode = http:STATUS_UNAUTHORIZED;
+            r.setJsonPayload({"error": vErr.message()});
+            return caller->respond(r);
         }
         // body.organization_id MUST match caller org id unless caller is admin
         if body.organization_id is int {
@@ -228,9 +252,12 @@ service /api/org on mainListener {
     }
 
     resource function put profile/[int id](OrgProfile body, http:Caller caller, http:Request req) returns error? {
-        error? vErr = validateAuth(req, caller);
+        error? vErr = validateAuth(req);
         if vErr is error {
-            return;
+            http:Response r = new;
+            r.statusCode = http:STATUS_UNAUTHORIZED;
+            r.setJsonPayload({"error": vErr.message()});
+            return caller->respond(r);
         }
         error? ownErr = ensureOrgOrAdmin(req, id);
         if ownErr is error {
@@ -310,9 +337,12 @@ service /api/org on mainListener {
     }
 
     resource function get events(http:Caller caller, http:Request req) returns error? {
-        error? vErr = validateAuth(req, caller);
+        error? vErr = validateAuth(req);
         if vErr is error {
-            return;
+            http:Response r = new;
+            r.statusCode = http:STATUS_UNAUTHORIZED;
+            r.setJsonPayload({"error": vErr.message()});
+            return caller->respond(r);
         }
         stream<OrgEvent, sql:Error?> eventStream = dbClient->query(`SELECT * FROM events`);
         OrgEvent[] events = [];
@@ -329,36 +359,48 @@ service /api/org on mainListener {
     }
 
     resource function get events/[int organization_id](http:Caller caller, http:Request req) returns error? {
-        error? vErr = validateAuth(req, caller);
+        error? vErr = validateAuth(req);
         if vErr is error {
-            return;
+            http:Response r = new;
+            r.statusCode = http:STATUS_UNAUTHORIZED;
+            r.setJsonPayload({"error": vErr.message()});
+            return caller->respond(r);
         }
         OrgEvent[] events = check getOrgEvents(organization_id);
         check caller->respond(events);
     }
 
     resource function post events(EventCreateRequest body, http:Caller caller, http:Request req) returns error? {
-        error? vErr = validateAuth(req, caller);
+        error? vErr = validateAuth(req);
         if vErr is error {
-            return;
+            http:Response r = new;
+            r.statusCode = http:STATUS_UNAUTHORIZED;
+            r.setJsonPayload({"error": vErr.message()});
+            return caller->respond(r);
         }
         OrgEvent created = check createOrgEvent(body);
         check caller->respond(created);
     }
 
     resource function put events/[int event_id](EventCreateRequest body, http:Caller caller, http:Request req) returns error? {
-        error? vErr = validateAuth(req, caller);
+        error? vErr = validateAuth(req);
         if vErr is error {
-            return;
+            http:Response r = new;
+            r.statusCode = http:STATUS_UNAUTHORIZED;
+            r.setJsonPayload({"error": vErr.message()});
+            return caller->respond(r);
         }
         OrgEvent updated = check updateOrgEvent(event_id, body);
         check caller->respond(updated);
     }
 
     resource function delete events/[int event_id](http:Caller caller, http:Request req) returns error? {
-        error? vErr = validateAuth(req, caller);
+        error? vErr = validateAuth(req);
         if vErr is error {
-            return;
+            http:Response r = new;
+            r.statusCode = http:STATUS_UNAUTHORIZED;
+            r.setJsonPayload({"error": vErr.message()});
+            return caller->respond(r);
         }
         string msg = check deleteOrgEvent(event_id);
         check caller->respond({message: msg});
@@ -366,9 +408,12 @@ service /api/org on mainListener {
 
     // Handle volunteer application to events
     resource function post events/[int event_id]/apply(http:Caller caller, http:Request req) returns error? {
-        error? vErr = validateAuth(req, caller);
+        error? vErr = validateAuth(req);
         if vErr is error {
-            return;
+            http:Response r = new;
+            r.statusCode = http:STATUS_UNAUTHORIZED;
+            r.setJsonPayload({"error": vErr.message()});
+            return caller->respond(r);
         }
         // Extract volunteer ID from token
         string authHeader = check req.getHeader("Authorization");
@@ -401,9 +446,12 @@ service /api/org on mainListener {
     }
 
     resource function get donations/[int id](http:Caller caller, http:Request req) returns error? {
-        error? vErr = validateAuth(req, caller);
+        error? vErr = validateAuth(req);
         if vErr is error {
-            return;
+            http:Response r = new;
+            r.statusCode = http:STATUS_UNAUTHORIZED;
+            r.setJsonPayload({"error": vErr.message()});
+            return caller->respond(r);
         }
         OrgDonation[] donations = check getOrgDonations(id);
         check caller->respond(donations);
@@ -411,27 +459,36 @@ service /api/org on mainListener {
 
     // Donation Requests
     resource function post donation_requests(DonationRequest body, http:Caller caller, http:Request req) returns error? {
-        error? vErr = validateAuth(req, caller);
+        error? vErr = validateAuth(req);
         if vErr is error {
-            return;
+            http:Response r = new;
+            r.statusCode = http:STATUS_UNAUTHORIZED;
+            r.setJsonPayload({"error": vErr.message()});
+            return caller->respond(r);
         }
         DonationRequest created = check createDonationRequest(body);
         check caller->respond(created);
     }
 
     resource function get donation_requests/org/[int organization_id](http:Caller caller, http:Request req) returns error? {
-        error? vErr = validateAuth(req, caller);
+        error? vErr = validateAuth(req);
         if vErr is error {
-            return;
+            http:Response r = new;
+            r.statusCode = http:STATUS_UNAUTHORIZED;
+            r.setJsonPayload({"error": vErr.message()});
+            return caller->respond(r);
         }
         DonationRequest[] list = check listDonationRequests(organization_id);
         check caller->respond(list);
     }
 
     resource function get donation_requests/[int request_id](http:Caller caller, http:Request req) returns error? {
-        error? vErr = validateAuth(req, caller);
+        error? vErr = validateAuth(req);
         if vErr is error {
-            return;
+            http:Response r = new;
+            r.statusCode = http:STATUS_UNAUTHORIZED;
+            r.setJsonPayload({"error": vErr.message()});
+            return caller->respond(r);
         }
         DonationRequest|error dr = getDonationRequest(request_id);
         if dr is DonationRequest {
@@ -444,9 +501,12 @@ service /api/org on mainListener {
     }
 
     resource function put donation_requests/[int request_id](DonationRequestUpdate body, http:Caller caller, http:Request req) returns error? {
-        error? vErr = validateAuth(req, caller);
+        error? vErr = validateAuth(req);
         if vErr is error {
-            return;
+            http:Response r = new;
+            r.statusCode = http:STATUS_UNAUTHORIZED;
+            r.setJsonPayload({"error": vErr.message()});
+            return caller->respond(r);
         }
         DonationRequest|error dr = updateDonationRequest(request_id, body);
         if dr is DonationRequest {
@@ -468,9 +528,12 @@ service /api/org on mainListener {
     }
 
     resource function delete donation_requests/[int request_id](http:Caller caller, http:Request req) returns error? {
-        error? vErr = validateAuth(req, caller);
+        error? vErr = validateAuth(req);
         if vErr is error {
-            return;
+            http:Response r = new;
+            r.statusCode = http:STATUS_UNAUTHORIZED;
+            r.setJsonPayload({"error": vErr.message()});
+            return caller->respond(r);
         }
         string|error res = deleteDonationRequest(request_id);
         if res is string {
@@ -485,9 +548,12 @@ service /api/org on mainListener {
     // Feedback
     // Feedback
     resource function post feedback(Feedback body, http:Caller caller, http:Request req) returns error? {
-        error? vErr = validateAuth(req, caller);
+        error? vErr = validateAuth(req);
         if vErr is error {
-            return;
+            http:Response r = new;
+            r.statusCode = http:STATUS_UNAUTHORIZED;
+            r.setJsonPayload({"error": vErr.message()});
+            return caller->respond(r);
         }
         Feedback|error created = createFeedback(body);
         if created is Feedback {
@@ -512,27 +578,36 @@ service /api/org on mainListener {
     }
 
     resource function get feedback/event/[int event_id](http:Caller caller, http:Request req) returns error? {
-        error? vErr = validateAuth(req, caller);
+        error? vErr = validateAuth(req);
         if vErr is error {
-            return;
+            http:Response r = new;
+            r.statusCode = http:STATUS_UNAUTHORIZED;
+            r.setJsonPayload({"error": vErr.message()});
+            return caller->respond(r);
         }
         Feedback[] list = check listFeedbackByEvent(event_id);
         check caller->respond(list);
     }
 
     resource function get feedback/org/[int organization_id](http:Caller caller, http:Request req) returns error? {
-        error? vErr = validateAuth(req, caller);
+        error? vErr = validateAuth(req);
         if vErr is error {
-            return;
+            http:Response r = new;
+            r.statusCode = http:STATUS_UNAUTHORIZED;
+            r.setJsonPayload({"error": vErr.message()});
+            return caller->respond(r);
         }
         Feedback[] list = check listFeedbackByOrg(organization_id);
         check caller->respond(list);
     }
 
     resource function get feedback/[int feedback_id](http:Caller caller, http:Request req) returns error? {
-        error? vErr = validateAuth(req, caller);
+        error? vErr = validateAuth(req);
         if vErr is error {
-            return;
+            http:Response r = new;
+            r.statusCode = http:STATUS_UNAUTHORIZED;
+            r.setJsonPayload({"error": vErr.message()});
+            return caller->respond(r);
         }
         Feedback|error fb = getFeedback(feedback_id);
         if fb is Feedback {
@@ -545,18 +620,24 @@ service /api/org on mainListener {
     }
 
     resource function get feedback/volunteer/[int volunteer_id](http:Caller caller, http:Request req) returns error? {
-        error? vErr = validateAuth(req, caller);
+        error? vErr = validateAuth(req);
         if vErr is error {
-            return;
+            http:Response r = new;
+            r.statusCode = http:STATUS_UNAUTHORIZED;
+            r.setJsonPayload({"error": vErr.message()});
+            return caller->respond(r);
         }
         Feedback[] list = check listFeedbackByVolunteer(volunteer_id);
         check caller->respond(list);
     }
 
     resource function put feedback/[int feedback_id](FeedbackUpdate upd, http:Caller caller, http:Request req) returns error? {
-        error? vErr = validateAuth(req, caller);
+        error? vErr = validateAuth(req);
         if vErr is error {
-            return;
+            http:Response r = new;
+            r.statusCode = http:STATUS_UNAUTHORIZED;
+            r.setJsonPayload({"error": vErr.message()});
+            return caller->respond(r);
         }
         Feedback|error tmp = updateFeedback(feedback_id, upd);
         if tmp is Feedback {
@@ -577,9 +658,12 @@ service /api/org on mainListener {
     }
 
     resource function delete feedback/[int feedback_id](http:Caller caller, http:Request req) returns error? {
-        error? vErr = validateAuth(req, caller);
+        error? vErr = validateAuth(req);
         if vErr is error {
-            return;
+            http:Response r = new;
+            r.statusCode = http:STATUS_UNAUTHORIZED;
+            r.setJsonPayload({"error": vErr.message()});
+            return caller->respond(r);
         }
         string|error del = deleteFeedback(feedback_id);
         if del is string {
@@ -594,9 +678,12 @@ service /api/org on mainListener {
     // List applications for an event (organization view)
     resource function get events/[int event_id]/applications(http:Caller caller, http:Request req) returns error? {
         // Auth then ensure caller is owning organization of the event OR admin
-        error? vErr = validateAuth(req, caller);
+        error? vErr = validateAuth(req);
         if vErr is error {
-            return;
+            http:Response r = new;
+            r.statusCode = http:STATUS_UNAUTHORIZED;
+            r.setJsonPayload({"error": vErr.message()});
+            return caller->respond(r);
         }
         // Fetch event's organization_id
         int owningOrg = -1;
@@ -671,7 +758,7 @@ service /api/org on mainListener {
 
 @http:ServiceConfig {
     cors: {
-        allowOrigins: ["http://localhost:5173"],
+        allowOrigins: ["http://localhost:5173", "http://localhost:5174"],
         allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         allowHeaders: ["Content-Type", "Authorization"]
     }
@@ -916,7 +1003,7 @@ service /api/vol on mainListener {
 
 @http:ServiceConfig {
     cors: {
-        allowOrigins: ["http://localhost:5173"],
+        allowOrigins: ["http://localhost:5173", "http://localhost:5174"],
         allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         allowHeaders: ["Content-Type", "Authorization"]
     }
@@ -925,6 +1012,13 @@ service /api/vol on mainListener {
 service /api/volunteers on mainListener {
     // Get volunteer profile
     resource function get [int id](http:Caller caller, http:Request req) returns error? {
+        if id <= 0 {
+            http:Response r = new;
+            r.statusCode = http:STATUS_BAD_REQUEST;
+            r.setJsonPayload({"error": "Invalid volunteer ID"});
+            return caller->respond(r);
+        }
+        
         // Require token and ownership
         string authHeader = "";
         {
@@ -1136,7 +1230,7 @@ function ensureAdmin(http:Request req) returns int|error {
 
 @http:ServiceConfig {
     cors: {
-        allowOrigins: ["http://localhost:5173"],
+        allowOrigins: ["http://localhost:5173", "http://localhost:5174"],
         allowMethods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
         allowHeaders: ["Content-Type", "Authorization"]
     }
@@ -1303,12 +1397,41 @@ service /api/admin on mainListener {
 // Public badge viewing service
 @http:ServiceConfig {
     cors: {
-        allowOrigins: ["http://localhost:5173"],
+        allowOrigins: ["http://localhost:5173", "http://localhost:5174"],
         allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         allowHeaders: ["Content-Type", "Authorization"]
     }
 }
 service /pub on mainListener {
+    
+    // Handle OPTIONS preflight requests
+    resource function options .(http:Caller caller, http:Request req) returns error? {
+        http:Response response = new;
+        response.setHeader("Access-Control-Allow-Origin", "*");
+        response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+        response.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+        response.statusCode = http:STATUS_NO_CONTENT;
+        return caller->respond(response);
+    }
+
+    // Public: Get volunteer profile by ID (for orgs to view volunteer details)
+    resource function get volunteers/[int volunteer_id]/profile(http:Caller caller, http:Request req) returns error? {
+        // Defensive check for volunteer_id
+        if volunteer_id <= 0 {
+            http:Response r = new;
+            r.statusCode = http:STATUS_BAD_REQUEST;
+            r.setJsonPayload({"error": "Invalid volunteer_id path parameter"});
+            return caller->respond(r);
+        }
+        VolunteerProfile|error profile = fetchVolunteerProfile(volunteer_id);
+        if profile is VolunteerProfile {
+            return caller->respond(profile);
+        }
+        http:Response r = new;
+        r.statusCode = http:STATUS_NOT_FOUND;
+        r.setJsonPayload({"error": (<error>profile).message()});
+        return caller->respond(r);
+    }
     resource function get badges/[int badge_id](http:Caller caller, http:Request req) returns error? {
         Badge|error b = getBadge(badge_id);
         if b is Badge {
@@ -1386,7 +1509,7 @@ service /pub on mainListener {
         return caller->respond(list);
     }
 
-    // Public organizations list
+    // P    // Public organizations list
     resource function get organizations(http:Caller caller, http:Request req) returns error? {
         UserSummary[] allUsers = check listAllUsers();
         UserSummary[] orgs = allUsers.filter(function(UserSummary u) returns boolean {
@@ -1468,7 +1591,7 @@ service /uploads on mainListener {
 
 @http:ServiceConfig {
     cors: {
-        allowOrigins: ["http://localhost:5173"],
+        allowOrigins: ["http://localhost:5173", "http://localhost:5174"],
         allowMethods: ["GET", "POST", "OPTIONS"],
         allowHeaders: ["Content-Type", "Authorization"]
     }
@@ -1492,9 +1615,12 @@ service /api/contact on mainListener {
     }
 
     resource function get messages(http:Caller caller, http:Request req) returns error? {
-        error? vErr = validateAuth(req, caller);
+        error? vErr = validateAuth(req);
         if vErr is error {
-            return;
+            http:Response r = new;
+            r.statusCode = http:STATUS_UNAUTHORIZED;
+            r.setJsonPayload({"error": vErr.message()});
+            return caller->respond(r);
         }
         ContactMessage[] messages = check getAllContactMessages();
         return caller->respond(messages);
@@ -1517,4 +1643,358 @@ service /api/contact on mainListener {
         return caller->respond({"success": false, "message": "No image file found"});
     }
 }
+
+@http:ServiceConfig {
+    cors: {
+        allowOrigins: ["http://localhost:5173", "http://localhost:5174"],
+        allowMethods: ["GET", "POST", "DELETE", "OPTIONS"],
+        allowHeaders: ["Content-Type", "Authorization"]
+    }
+}
+service /api/chat on mainListener {
+    // Handle OPTIONS preflight requests
+    resource function options .(http:Caller caller, http:Request req) returns error? {
+        http:Response response = new;
+        response.setHeader("Access-Control-Allow-Origin", "*");
+        response.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
+        response.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+        response.statusCode = http:STATUS_NO_CONTENT;
+        return caller->respond(response);
+    }
+
+    // Delete a chat message (only sender, within 15 minutes)
+    resource function delete messages/[int id](http:Caller caller, http:Request req) returns error? {
+        if id <= 0 {
+            http:Response r = new;
+            r.statusCode = http:STATUS_BAD_REQUEST;
+            r.setJsonPayload({"error": "Invalid message id"});
+            return caller->respond(r);
+        }
+        error? vErr = validateAuth(req);
+        if vErr is error {
+            http:Response r = new;
+            r.statusCode = http:STATUS_UNAUTHORIZED;
+            r.setJsonPayload({"error": vErr.message()});
+            return caller->respond(r);
+        }
+        string authHeader = check req.getHeader("Authorization");
+        string token = authHeader.substring(7);
+        jwt:Payload jwtPayload = check jwt:validate(token, validatorConfig);
+        anydata? userIdJ = jwtPayload["user_id"];
+        int userId = -1;
+        if userIdJ is int { userId = userIdJ; }
+        else if userIdJ is string {
+            int|error parsed = 'int:fromString(userIdJ);
+            if parsed is int { userId = parsed; }
+        }
+        // Fetch message info
+        stream<record {|int user_id; string created_at;|}, sql:Error?> msgStream = dbClient->query(`SELECT user_id, created_at FROM event_chat_messages WHERE id = ${id}`);
+        record {|record {|int user_id; string created_at;|} value;|}|sql:Error? msgRow = msgStream.next();
+        check msgStream.close();
+        if !(msgRow is record {|record {|int user_id; string created_at;|} value;|}) {
+            http:Response r = new;
+            r.statusCode = http:STATUS_NOT_FOUND;
+            r.setJsonPayload({"error": "Message not found"});
+            return caller->respond(r);
+        }
+        int senderId = msgRow.value.user_id;
+        // Only sender can delete
+        if senderId != userId {
+            http:Response r = new;
+            r.statusCode = http:STATUS_FORBIDDEN;
+            r.setJsonPayload({"error": "You can only delete your own messages"});
+            return caller->respond(r);
+        }
+        // Delete message
+        sql:ExecutionResult|sql:Error result = dbClient->execute(`DELETE FROM event_chat_messages WHERE id = ${id}`);
+        if result is sql:Error {
+            http:Response r = new;
+            r.statusCode = http:STATUS_INTERNAL_SERVER_ERROR;
+            r.setJsonPayload({"error": result.message()});
+            return caller->respond(r);
+        }
+        
+
+        
+        return caller->respond({success: true});
+    }
+
+
+    resource function get events/[int event_id]/messages(http:Caller caller, http:Request req) returns error? {
+        if event_id <= 0 {
+            http:Response r = new;
+            r.statusCode = http:STATUS_BAD_REQUEST;
+            r.setJsonPayload({"error": "Invalid event_id"});
+            return caller->respond(r);
+        }
+        error? vErr = validateAuth(req);
+        if vErr is error {
+            http:Response r = new;
+            r.statusCode = http:STATUS_UNAUTHORIZED;
+            r.setJsonPayload({"error": vErr.message()});
+            return caller->respond(r);
+        }
+        ChatMessage[] messages = check getChatMessages(event_id);
+        return caller->respond(messages);
+    }
+
+    // New endpoint: Get unread message count for a volunteer in an event chat
+    resource function get events/[int event_id]/messages/unread(http:Caller caller, http:Request req) returns error? {
+        if event_id <= 0 {
+            http:Response r = new;
+            r.statusCode = http:STATUS_BAD_REQUEST;
+            r.setJsonPayload({"error": "Invalid event_id"});
+            return caller->respond(r);
+        }
+        
+        error? vErr = validateAuth(req);
+        if vErr is error {
+            http:Response r = new;
+            r.statusCode = http:STATUS_UNAUTHORIZED;
+            r.setJsonPayload({"error": vErr.message()});
+            return caller->respond(r);
+        }
+
+        // Get volunteer_id from query param
+        string? volunteerIdStr = req.getQueryParamValue("volunteer_id");
+        if volunteerIdStr is () {
+            http:Response r = new;
+            r.statusCode = http:STATUS_BAD_REQUEST;
+            r.setJsonPayload({"error": "Missing volunteer_id query parameter"});
+            return caller->respond(r);
+        }
+        
+        if volunteerIdStr == "null" || volunteerIdStr == "undefined" {
+            http:Response r = new;
+            r.statusCode = http:STATUS_BAD_REQUEST;
+            r.setJsonPayload({"error": "Invalid volunteer_id: null or undefined"});
+            return caller->respond(r);
+        }
+        
+        int|error volunteerId = 'int:fromString(volunteerIdStr);
+        if volunteerId is error || volunteerId <= 0 {
+            http:Response r = new;
+            r.statusCode = http:STATUS_BAD_REQUEST;
+            r.setJsonPayload({"error": "Invalid volunteer_id"});
+            return caller->respond(r);
+        }
+
+        // Query for unread messages for this volunteer in this event
+        int unreadCount = 0;
+        stream<record {|int cnt;|}, sql:Error?> res = dbClient->query(`
+            SELECT COUNT(*) AS cnt 
+            FROM event_chat_messages 
+            WHERE event_id = ${event_id} 
+              AND recipient_id = ${volunteerId} 
+              AND is_read = 0`);
+        record {|record {|int cnt;|} value;|}|sql:Error? row = res.next();
+        if row is record {|record {|int cnt;|} value;|} {
+            unreadCount = row.value.cnt;
+        }
+        check res.close();
+        check caller->respond({unread: unreadCount});
+        return;
+    }
+
+    // Private chat between organization and specific volunteer
+    resource function get events/[int event_id]/messages/volunteer/[int volunteer_id](http:Caller caller, http:Request req) returns error? {
+        // Validate path parameters
+        if event_id <= 0 || volunteer_id <= 0 {
+            http:Response r = new;
+            r.statusCode = http:STATUS_BAD_REQUEST;
+            r.setJsonPayload({"error": "Invalid event_id or volunteer_id"});
+            return caller->respond(r);
+        }
+        
+        error? vErr = validateAuth(req);
+        if vErr is error {
+            http:Response r = new;
+            r.statusCode = http:STATUS_UNAUTHORIZED;
+            r.setJsonPayload({"error": vErr.message()});
+            return caller->respond(r);
+        }
+        
+        // Verify caller is organization or the specific volunteer
+        string authHeader = check req.getHeader("Authorization");
+        string token = authHeader.substring(7);
+        jwt:Payload jwtPayload = check jwt:validate(token, validatorConfig);
+        anydata? userIdJ = jwtPayload["user_id"];
+        anydata? userTypeJ = jwtPayload["user_type"];
+        
+        int userId = -1;
+        if userIdJ is int {
+            userId = userIdJ;
+        } else if userIdJ is string {
+            int|error parsed = 'int:fromString(userIdJ);
+            if parsed is int {
+                userId = parsed;
+            }
+        }
+        
+        string userType = "";
+        if userTypeJ is string {
+            userType = userTypeJ;
+        }
+        
+        // Get organization ID for this event to verify access
+        stream<record {|int org_id;|}, sql:Error?> orgStream = dbClient->query(`
+            SELECT organization_id as org_id FROM events WHERE event_id = ${event_id}`);
+        record {|record {|int org_id;|} value;|}|sql:Error? orgRow = orgStream.next();
+        check orgStream.close();
+        
+        int eventOrgId = -1;
+        if orgRow is record {|record {|int org_id;|} value;|} {
+            eventOrgId = orgRow.value.org_id;
+        }
+        
+        // Only allow:
+        // 1. The specific volunteer (userId == volunteer_id)
+        // 2. The organization that owns the event (userId == eventOrgId)
+        boolean hasAccess = false;
+        if userType == "volunteer" && userId == volunteer_id {
+            hasAccess = true;
+        } else if userType == "organization" && userId == eventOrgId {
+            hasAccess = true;
+        }
+        
+        if !hasAccess {
+            http:Response r = new;
+            r.statusCode = http:STATUS_FORBIDDEN;
+            r.setJsonPayload({"error": "Access denied - you can only view your own conversations"});
+            return caller->respond(r);
+        }
+        
+        ChatMessage[] messages = check getPrivateChatMessages(event_id, volunteer_id);
+        return caller->respond(messages);
+    }
+
+    resource function post events/[int event_id]/messages/volunteer/[int volunteer_id](http:Caller caller, http:Request req) returns error? {
+        // Validate path parameters
+        if event_id <= 0 || volunteer_id <= 0 {
+            http:Response r = new;
+            r.statusCode = http:STATUS_BAD_REQUEST;
+            r.setJsonPayload({"error": "Invalid event_id or volunteer_id"});
+            return caller->respond(r);
+        }
+        
+        error? vErr = validateAuth(req);
+        if vErr is error {
+            http:Response r = new;
+            r.statusCode = http:STATUS_UNAUTHORIZED;
+            r.setJsonPayload({"error": vErr.message()});
+            return caller->respond(r);
+        }
+
+        json payload = check req.getJsonPayload();
+        string message = "";
+        if payload is map<json> {
+            json? msgVal = payload["message"];
+            if msgVal is string {
+                message = msgVal;
+            }
+        }
+        
+        string authHeader = check req.getHeader("Authorization");
+        string token = authHeader.substring(7);
+        jwt:Payload jwtPayload = check jwt:validate(token, validatorConfig);
+        anydata? userIdJ = jwtPayload["user_id"];
+        anydata? userTypeJ = jwtPayload["user_type"];
+        
+        int senderId = -1;
+        if userIdJ is int {
+            senderId = userIdJ;
+        } else if userIdJ is string {
+            int|error parsed = 'int:fromString(userIdJ);
+            if parsed is int {
+                senderId = parsed;
+            }
+        }
+        
+        string userType = "";
+        if userTypeJ is string {
+            userType = userTypeJ;
+        }
+        
+        // Get organization ID for this event
+        stream<record {|int org_id;|}, sql:Error?> orgStream = dbClient->query(`
+            SELECT organization_id as org_id FROM events WHERE event_id = ${event_id}`);
+        record {|record {|int org_id;|} value;|}|sql:Error? orgRow = orgStream.next();
+        check orgStream.close();
+        
+        int eventOrgId = -1;
+        if orgRow is record {|record {|int org_id;|} value;|} {
+            eventOrgId = orgRow.value.org_id;
+        }
+        
+        // Verify sender has access to this conversation
+        boolean hasAccess = false;
+        int recipientId = -1;
+        
+        if userType == "volunteer" && senderId == volunteer_id {
+            // Volunteer sending to organization
+            hasAccess = true;
+            recipientId = eventOrgId;
+        } else if userType == "organization" && senderId == eventOrgId {
+            // Organization sending to volunteer
+            hasAccess = true;
+            recipientId = volunteer_id;
+        }
+        
+        if !hasAccess {
+            http:Response r = new;
+            r.statusCode = http:STATUS_FORBIDDEN;
+            r.setJsonPayload({"error": "Access denied - you can only send messages in your own conversations"});
+            return caller->respond(r);
+        }
+        
+        check postPrivateChatMessage(event_id, senderId, recipientId, message);
+        return caller->respond({success: true});
+    }
+
+    resource function post events/[int event_id]/messages(http:Caller caller, http:Request req) returns error? {
+        error? vErr = validateAuth(req);
+        if vErr is error {
+            http:Response r = new;
+            r.statusCode = http:STATUS_UNAUTHORIZED;
+            r.setJsonPayload({"error": vErr.message()});
+            return caller->respond(r);
+        }
+
+        json payload = check req.getJsonPayload();
+        string message = "";
+        if payload is map<json> {
+            json? msgVal = payload["message"];
+            if msgVal is string {
+                message = msgVal;
+            } else if msgVal is () {
+                return error("Missing 'message' field in payload");
+            } else {
+                message = msgVal.toString();
+            }
+        } else {
+            return error("Invalid payload format");
+        }
+        string authHeader = check req.getHeader("Authorization");
+        string token = authHeader.substring(7);
+        jwt:Payload jwtPayload = check jwt:validate(token, validatorConfig);
+        anydata? userIdJ = jwtPayload["user_id"];
+        int userId = -1;
+        if userIdJ is int {
+            userId = userIdJ;
+        } else if userIdJ is string {
+            int|error parsed = 'int:fromString(userIdJ);
+            if parsed is int {
+                userId = parsed;
+            }
+        }
+        if userId < 0 {
+            return error("Invalid user_id in JWT");
+        }
+
+        check postChatMessage(event_id, userId, message);
+        return caller->respond({success: true});
+    }
+}
+
+
 
