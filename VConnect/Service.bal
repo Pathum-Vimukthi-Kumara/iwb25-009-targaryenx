@@ -1590,7 +1590,26 @@ service /api/contact on mainListener {
         ContactMessage[] messages = check getAllContactMessages();
         return caller->respond(messages);
     }
-
+    resource function put messages/[int messageId]/read(http:Caller caller, http:Request req) returns error? {
+        error? vErr = validateAuth(req);
+        if vErr is error {
+            return;
+        }
+        ContactMessage|error result = updateContactMessageStatus(messageId, "read");
+        if result is ContactMessage {
+            return caller->respond({message: "Status updated successfully", contact: result});
+        }
+        error e = <error>result;
+        string msg = e.message();
+        int status = http:STATUS_INTERNAL_SERVER_ERROR;
+        if msg.indexOf("not found") >= 0 {
+            status = http:STATUS_NOT_FOUND;
+        }
+        http:Response r = new;
+        r.statusCode = status;
+        r.setJsonPayload({"error": msg});
+        return caller->respond(r);
+    }
     resource function post upload_photo(http:Request request, http:Caller caller) returns error? {
         var bodyParts = request.getBodyParts();
         if (bodyParts is mime:Entity[]) {
@@ -1608,6 +1627,8 @@ service /api/contact on mainListener {
         return caller->respond({"success": false, "message": "No image file found"});
     }
 }
+
+
 
 @http:ServiceConfig {
     cors: {

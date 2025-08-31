@@ -78,3 +78,32 @@ function getAllContactMessages() returns ContactMessage[]|error {
     }
     return messages;
 }
+function updateContactMessageStatus(int contactId, string status) returns ContactMessage|error {
+    if status != "read" && status != "unread" {
+        return error("Invalid status. Must be 'read' or 'unread'");
+    }
+
+    sql:ExecutionResult|sql:Error r = dbClient->execute(`UPDATE contact_messages 
+        SET status = ${status} WHERE contact_id = ${contactId}`);
+
+    if r is sql:Error {
+        return error("Database update failed: " + r.message());
+    }
+
+    sql:ExecutionResult result = <sql:ExecutionResult>r;
+    if result.affectedRowCount is int && result.affectedRowCount > 0 {
+        stream<ContactMessage, sql:Error?> rs = dbClient->query(`SELECT contact_id, name, 
+            email, subject, message, created_at, status FROM contact_messages 
+            WHERE contact_id = ${contactId}`);
+        record {|ContactMessage value;|}|sql:Error? n = rs.next();
+        sql:Error? cerr = rs.close();
+        if cerr is error {
+            return cerr;
+        }
+        if n is record {|ContactMessage value;|} {
+            return n.value;
+        }
+        return error("Message not found after update");
+    }
+    return error("No message found with the given ID");
+}

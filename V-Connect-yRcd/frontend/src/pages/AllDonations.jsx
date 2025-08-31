@@ -397,6 +397,7 @@ const AllDonations = () => {
             </motion.div>
           </div>
         </motion.section>
+      </main>
       <Footer />
     </>
   );
