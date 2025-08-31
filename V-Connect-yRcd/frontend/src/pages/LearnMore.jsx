@@ -406,20 +406,24 @@ const LearnMore = () => {
             >
               <h3 className="text-2xl font-bold mb-6">Ready to Join Our Community?</h3>
               <div className="flex flex-col sm:flex-row justify-center gap-4">
-                <motion.button
-                  className="bg-primary text-white hover:bg-primary/90 py-3 px-8 rounded-md font-medium transition-colors duration-300"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  Sign Up as Volunteer
-                </motion.button>
-                <motion.button
-                  className="bg-accent text-white hover:bg-accent/90 py-3 px-8 rounded-md font-medium transition-colors duration-300"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  Register Organization
-                </motion.button>
+                <Link to="/login?type=volunteer">
+                  <motion.button
+                    className="bg-primary text-white hover:bg-primary/90 py-3 px-8 rounded-md font-medium transition-colors duration-300"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    Sign Up as Volunteer
+                  </motion.button>
+                </Link>
+                <Link to="/login?type=organization">
+                  <motion.button
+                    className="bg-accent text-white hover:bg-accent/90 py-3 px-8 rounded-md font-medium transition-colors duration-300"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    Register Organization
+                  </motion.button>
+                </Link>
               </div>
             </motion.div>
           </div>
@@ -560,9 +564,11 @@ const LearnMore = () => {
                 viewport={{ once: true }}
                 transition={{ delay: 0.2 }}
               >
-                <button className="bg-white text-primary hover:bg-blue-50 py-3 px-8 rounded-md font-medium transition-colors">
-                  Sign Up Now
-                </button>
+                <Link to="/login">
+                  <button className="bg-white text-primary hover:bg-blue-50 py-3 px-8 rounded-md font-medium transition-colors">
+                    Sign Up Now
+                  </button>
+                </Link>
                 <Link to="/" className="border-2 border-white bg-transparent hover:bg-white/10 py-3 px-8 rounded-md font-medium transition-colors">
                   Back to Home
                 </Link>
