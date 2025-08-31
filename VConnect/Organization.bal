@@ -1,6 +1,5 @@
-// Get all events (public API helper)
-
 import ballerina/sql;
+
 type OrgProfile record {|
     int organization_id?;
     string description;
@@ -22,6 +21,7 @@ type OrgEvent record {|
     string? status;
     string? created_at?;
 |};
+
 type EventApplication record {|
     int application_id?;
     int volunteer_id;
@@ -30,20 +30,18 @@ type EventApplication record {|
     string? applied_at?;
 |};
 
-
-// Request payload for creating an event (eventId optional)
 type EventCreateRequest record {|
-    int organization_id?; // preferred numeric id
-    string orgId?; // legacy string id
-    string title; // required
-    string description; // required
+    int organization_id?;
+    string orgId?;
+    string title;
+    string description;
     string location?;
     string event_date?;
     string start_time?;
     string end_time?;
     int required_volunteers?;
     string status?;
-    string eventId?; // ignored
+    string eventId?; // optional
 |};
 
 type OrgDonation record {|
@@ -52,31 +50,26 @@ type OrgDonation record {|
     string orgId;
 |};
 
-
-
-// Donation request table mapping
 type DonationRequest record {|
-    int request_id?; // auto generated
-    int organization_id; // required
-    string title; // required
-    string description; // required
-    decimal target_amount?; // optional, only if you want a target
-    string contact_info?; // optional contact details
-    string status?; // optional; defaults to active if absent
-    string created_at?; // optional (returned from DB)
+    int request_id?;
+    int organization_id;
+    string title;
+    string description;
+    decimal target_amount?; // optional
+    string contact_info?; // optional 
+    string status?; // optional
+    string created_at?; // optional 
 |};
 
-// Partial update payload for donation request
 type DonationRequestUpdate record {|
     string? title;
     string? description;
     decimal? target_amount;
     string? contact_info;
     string? status;
-    anydata...; // allow extra untouched fields
+    anydata...;
 |};
 
-// Feedback table mapping
 type Feedback record {|
     int feedback_id?;
     int event_id;
@@ -88,7 +81,6 @@ type Feedback record {|
     string? given_at?;
 |};
 
-// Badges table mapping
 type Badge record {|
     int badge_id?;
     int volunteer_id;
@@ -99,57 +91,30 @@ type Badge record {|
 |};
 
 type BadgeCreate record {|
-    int volunteer_id; // required
-    string badge_name; // required
+    int volunteer_id;
+    string badge_name;
     string badge_description?; // optional
-    int awarded_by?; // optional org awarding
-    anydata...; // ignore unexpected extra client fields (e.g., badge_id, earned_date)
+    int awarded_by?; // optional 
+    anydata...;
 |};
 
 type BadgeUpdate record {|
     string badge_name?;
-    string badge_description?;
-    int awarded_by?;
-    anydata...; // allow unexpected fields; only listed ones processed
+    string badge_description?; // optional
+    int awarded_by?; // optional
+    anydata...;
 |};
 
-// Partial update payload for feedback
 type FeedbackUpdate record {|
     int? rating;
     string? comment;
     int? hours_worked;
-    anydata...; // allow extra fields (event_id, volunteer_id, etc.) without binding errors
+    anydata...;
 |};
 
-
-
-// Typed error for not found scenarios
 type NotFoundError error<record {string message;}>;
 
-// Only one DbConfig, mysqlOptions, dbConfig, and dbClient should be declared in this file.
-
-/// Get organization profile by id.
-/// @param id organization id
-/// @return OrgProfile or error
-function getAllEvents() returns OrgEvent[]|error {
-    OrgEvent[] events = [];
-    stream<OrgEvent, sql:Error?> resultStream = dbClient->query(`SELECT event_id, organization_id, title, description, location, event_date, start_time, end_time, required_volunteers, status, created_at FROM events`);
-    while true {
-        record {|OrgEvent value;|}|sql:Error? n = resultStream.next();
-        if n is record {|OrgEvent value;|} {
-            events.push(n.value);
-            continue;
-        }
-        break;
-    }
-    sql:Error? closeErr = resultStream.close();
-    if closeErr is error {
-        return closeErr;
-    }
-    return events;
-}
-
-
+//--- Organization Profile Functions ---
 function getOrgProfile(int id) returns OrgProfile|error {
     stream<OrgProfile, sql:Error?> s = dbClient->query(`SELECT organization_id, description, address, website, is_verified FROM organization_profiles WHERE organization_id = ${id}`);
     record {|OrgProfile value;|}|sql:Error? n = s.next();
@@ -163,13 +128,12 @@ function getOrgProfile(int id) returns OrgProfile|error {
     return error NotFoundError("NOT_FOUND", message = "Organization profile not found");
 }
 
-// Ensure an organization profile exists; if not, create a minimal empty one and return it.
 function ensureOrgProfile(int orgId) returns OrgProfile|error {
     OrgProfile|error p = getOrgProfile(orgId);
     if p is OrgProfile {
         return p;
     }
-    // Only auto-create if the error is the standard NOT_FOUND
+
     string msg = (<error>p).message();
     if msg != "Organization profile not found" && msg != "NOT_FOUND" {
         return p;
@@ -186,7 +150,7 @@ function createOrgProfile(OrgProfile profile) returns string|error {
     if profile.organization_id is () {
         return error("organization_id required");
     }
-    // Check existing
+
     stream<OrgProfile, sql:Error?> s = dbClient->query(`SELECT organization_id, description, address, website, is_verified FROM organization_profiles WHERE organization_id = ${profile.organization_id}`);
     record {|OrgProfile value;|}|sql:Error? n = s.next();
     sql:Error? closeErr = s.close();
@@ -215,6 +179,25 @@ function updateOrgProfile(int id, OrgProfile body) returns string|error {
         return "Updated Successfully.";
     }
     return error("OrgError", message = "Update failed or no rows affected");
+}
+
+//---Event-related functions---
+function getAllEvents() returns OrgEvent[]|error {
+    OrgEvent[] events = [];
+    stream<OrgEvent, sql:Error?> resultStream = dbClient->query(`SELECT event_id, organization_id, title, description, location, event_date, start_time, end_time, required_volunteers, status, created_at FROM events`);
+    while true {
+        record {|OrgEvent value;|}|sql:Error? n = resultStream.next();
+        if n is record {|OrgEvent value;|} {
+            events.push(n.value);
+            continue;
+        }
+        break;
+    }
+    sql:Error? closeErr = resultStream.close();
+    if closeErr is error {
+        return closeErr;
+    }
+    return events;
 }
 
 function getOrgEvents(int orgId) returns OrgEvent[]|error {
@@ -283,7 +266,6 @@ function createOrgEvent(EventCreateRequest event) returns OrgEvent|error {
         ${event.start_time ?: ()}, ${event.end_time ?: ()}, ${event.required_volunteers ?: ()}, ${status})`);
     if res.affectedRowCount is int && res.affectedRowCount > 0 {
         int newId = <int>res.lastInsertId;
-        // Fetch created row (optional) else build record from input
         stream<OrgEvent, sql:Error?> s = dbClient->query(`SELECT event_id, organization_id, title, description, location,
                 event_date, start_time, end_time, required_volunteers, status, created_at
             FROM events WHERE event_id = ${newId}`);
@@ -380,9 +362,6 @@ function deleteOrgEvent(int eventId) returns string|error {
     return error("NotFound", message = "Event not found");
 }
 
-// Helper to safely embed primitive values into dynamic SQL (basic quoting)
-// removed setsql – parameterized queries now used above
-
 function getOrgDonations(int id) returns OrgDonation[]|error {
     OrgDonation[] donations = [];
     stream<OrgDonation, sql:Error?> resultStream = dbClient->query(`SELECT * FROM donations WHERE orgId = ${id}`);
@@ -402,7 +381,6 @@ function getOrgDonations(int id) returns OrgDonation[]|error {
 }
 
 // --- Donation Requests ---
-
 function createDonationRequest(DonationRequest req) returns DonationRequest|error {
     if req.organization_id <= 0 {
         return error("ValidationError", message = "organization_id required");
@@ -567,7 +545,6 @@ function deleteDonationRequest(int requestId) returns string|error {
 }
 
 // --- Feedback ---
-
 function createFeedback(Feedback fb) returns Feedback|error {
     if fb.event_id <= 0 {
         return error("ValidationError", message = "event_id required");
@@ -581,10 +558,7 @@ function createFeedback(Feedback fb) returns Feedback|error {
     if fb.rating < 1 || fb.rating > 5 {
         return error("ValidationError", message = "rating must be 1-5");
     }
-    // Log the feedback data for debugging
-    // log:printInfo("Creating feedback with data: " + fb.toString());
-    // Pre-check existence to avoid FK errors
-    // Event exists?
+
     stream<record {|int eid;|}, sql:Error?> evS = dbClient->query(`SELECT event_id as eid FROM events WHERE event_id = ${fb.event_id}`);
     record {|record {|int eid;|} value;|}|sql:Error? evN = evS.next();
     sql:Error? evClose = evS.close();
@@ -594,7 +568,7 @@ function createFeedback(Feedback fb) returns Feedback|error {
     if !(evN is record {|record {|int eid;|} value;|}) {
         return error("NotFound", message = "Event not found");
     }
-    // Volunteer exists?
+
     stream<record {|int uid;|}, sql:Error?> volS = dbClient->query(`SELECT user_id as uid FROM users WHERE user_id = ${fb.volunteer_id}`);
     record {|record {|int uid;|} value;|}|sql:Error? volN = volS.next();
     sql:Error? volClose = volS.close();
@@ -604,7 +578,7 @@ function createFeedback(Feedback fb) returns Feedback|error {
     if !(volN is record {|record {|int uid;|} value;|}) {
         return error("NotFound", message = "Volunteer not found");
     }
-    // Organization exists?
+
     stream<record {|int oid;|}, sql:Error?> orgS = dbClient->query(`SELECT user_id as oid FROM users WHERE user_id = ${fb.organization_id}`);
     record {|record {|int oid;|} value;|}|sql:Error? orgN = orgS.next();
     sql:Error? orgClose = orgS.close();
@@ -614,7 +588,7 @@ function createFeedback(Feedback fb) returns Feedback|error {
     if !(orgN is record {|record {|int oid;|} value;|}) {
         return error("NotFound", message = "Organization not found");
     }
-    // Duplicate feedback for event + volunteer?
+
     stream<record {|int fid;|}, sql:Error?> dupS = dbClient->query(`SELECT feedback_id as fid FROM feedback WHERE event_id = ${fb.event_id} AND volunteer_id = ${fb.volunteer_id}`);
     record {|record {|int fid;|} value;|}|sql:Error? dupN = dupS.next();
     sql:Error? dupClose = dupS.close();
@@ -632,12 +606,9 @@ function createFeedback(Feedback fb) returns Feedback|error {
     sql:ExecutionResult result = <sql:ExecutionResult>r;
     if result.affectedRowCount is int && result.affectedRowCount > 0 {
         int newId = <int>result.lastInsertId;
-        // Award performance badges automatically if rating qualifies (>=4)
-        if fb.rating >= 4 { // no admin context here, set awarded_by null
-            // Use helper with awardedByAdminId = -1 to mark system-awarded (DB will accept null if column allows)
+        if fb.rating >= 4 {
             error? ap = ensurePerformanceBadges(fb.volunteer_id, -1);
-            if ap is error { // ignore awarding errors, but log
-                // silent ignore or add logging if log module imported elsewhere
+            if ap is error {
             }
         }
         stream<Feedback, sql:Error?> s = dbClient->query(`SELECT feedback_id, event_id, volunteer_id, organization_id, rating, comment, hours_worked, given_at FROM feedback WHERE feedback_id = ${newId}`);
@@ -771,15 +742,11 @@ function deleteFeedback(int id) returns string|error {
     return error("NotFound", message = "Feedback not found");
 }
 
-// ---------------------- Automatic Performance Badges ----------------------
-// Badge tiers at every 5 high-rated (4 or 5) feedback entries.
-// Example names: "Bronze Volunteer" (5), "Silver Volunteer" (10), ... up to 50.
+// ---------------------- Performance Badge Logic ----------------------
 const int PERF_BADGE_INTERVAL = 5;
 final string[] PERF_BADGE_NAMES = ["Bronze Volunteer", "Silver Volunteer", "Gold Volunteer", "Platinum Volunteer", "Diamond Volunteer", "Legend Volunteer", "Elite Volunteer", "Master Volunteer", "Grandmaster Volunteer", "Champion Volunteer"];
 
-// Compute how many high-rated feedback rows a volunteer has and ensure badges for each 5-point tier.
 function ensurePerformanceBadges(int volunteerId, int awardedByAdminId) returns error? {
-    // Count existing qualifying feedback (rating 4 or 5)
     int highCount = 0;
     stream<record {|int cnt;|}, sql:Error?> cs = dbClient->query(`SELECT COUNT(*) AS cnt FROM feedback WHERE volunteer_id = ${volunteerId} AND rating >= 4`);
     record {|record {|int cnt;|} value;|}|sql:Error? cn = cs.next();
@@ -793,11 +760,11 @@ function ensurePerformanceBadges(int volunteerId, int awardedByAdminId) returns 
     if highCount <= 0 {
         return;
     }
-    int tiers = highCount / PERF_BADGE_INTERVAL; // integer division
+    int tiers = highCount / PERF_BADGE_INTERVAL;
     if tiers <= 0 {
         return;
     }
-    // Fetch existing performance badge names for this volunteer
+
     map<boolean> have = {};
     stream<record {|string name;|}, sql:Error?> bs = dbClient->query(`SELECT badge_name AS name FROM badges WHERE volunteer_id = ${volunteerId}`);
     while true {
@@ -817,10 +784,8 @@ function ensurePerformanceBadges(int volunteerId, int awardedByAdminId) returns 
     while i <= tiers && i <= PERF_BADGE_NAMES.length() {
         string bName = PERF_BADGE_NAMES[i - 1];
         if have[bName] is () {
-            // Insert badge
             int threshold = i * PERF_BADGE_INTERVAL;
             string desc = "Awarded for " + threshold.toString() + " high-rated feedback entries";
-            // If awardedByAdminId < 0 treat as system auto-awarded (NULL awarded_by)
             if awardedByAdminId >= 0 {
                 _ = check dbClient->execute(`INSERT INTO badges (volunteer_id, badge_name, badge_description, awarded_by) VALUES (${volunteerId}, ${bName}, ${desc}, ${awardedByAdminId})`);
             } else {
@@ -830,7 +795,6 @@ function ensurePerformanceBadges(int volunteerId, int awardedByAdminId) returns 
         }
         i += 1;
     }
-    // Optionally log awarded count; ignore if zero.
     return ();
 }
 
@@ -889,9 +853,7 @@ function deleteBadge(int id) returns string|error {
     return error("NotFound", message = "Badge not found");
 }
 
-
-
-// Fetch single application for volunteer+event
+// --- Event Application Logic ---
 function getEventApplicationByVolunteerAndEvent(int volunteerId, int eventId) returns EventApplication|error {
     stream<EventApplication, sql:Error?> s = dbClient->query(`SELECT application_id, volunteer_id, event_id, application_status, applied_at FROM event_applications WHERE volunteer_id = ${volunteerId} AND event_id = ${eventId}`);
     record {|EventApplication value;|}|sql:Error? n = s.next();
@@ -905,14 +867,11 @@ function getEventApplicationByVolunteerAndEvent(int volunteerId, int eventId) re
     return error("NotFound", message = "Application not found");
 }
 
-// Create application if not already there (idempotent)
 function createEventApplication(int volunteerId, int eventId) returns EventApplication|error {
-    // Return existing if present
     EventApplication|error existing = getEventApplicationByVolunteerAndEvent(volunteerId, eventId);
     if existing is EventApplication {
         return existing;
     }
-    // Ensure event exists
     stream<record {|int eid;|}, sql:Error?> es = dbClient->query(`SELECT event_id AS eid FROM events WHERE event_id = ${eventId}`);
     record {|record {|int eid;|} value;|}|sql:Error? en = es.next();
     sql:Error? eClose = es.close();
@@ -922,7 +881,6 @@ function createEventApplication(int volunteerId, int eventId) returns EventAppli
     if !(en is record {|record {|int eid;|} value;|}) {
         return error("NotFound", message = "Event not found");
     }
-    // Ensure volunteer exists
     stream<record {|int vid;|}, sql:Error?> vs = dbClient->query(`SELECT user_id AS vid FROM users WHERE user_id = ${volunteerId} AND user_type = 'volunteer'`);
     record {|record {|int vid;|} value;|}|sql:Error? vn = vs.next();
     sql:Error? vClose = vs.close();
@@ -932,12 +890,12 @@ function createEventApplication(int volunteerId, int eventId) returns EventAppli
     if !(vn is record {|record {|int vid;|} value;|}) {
         return error("NotFound", message = "Volunteer not found");
     }
-    // Insert
+
     sql:ExecutionResult ins = check dbClient->execute(`INSERT INTO event_applications (volunteer_id, event_id) VALUES (${volunteerId}, ${eventId})`);
     if ins.affectedRowCount is int && ins.affectedRowCount > 0 {
         return getEventApplicationByVolunteerAndEvent(volunteerId, eventId);
     }
-    // Possible race: another insert happened; try fetch again
+
     EventApplication|error second = getEventApplicationByVolunteerAndEvent(volunteerId, eventId);
     if second is EventApplication {
         return second;

@@ -1,6 +1,5 @@
 import ballerina/sql;
 
-// Summary type for listing users (excludes password)
 type UserSummary record {|
     int user_id;
     string email;
@@ -79,9 +78,7 @@ function listVolunteerContributionsForEvent(int eventId) returns VolunteerContri
     return list;
 }
 
-// Offering badges
-
-public function createBadge(BadgeCreate b) returns Badge|error {
+function createBadge(BadgeCreate b) returns Badge|error {
     if b.volunteer_id <= 0 {
         return error("ValidationError", message = "volunteer_id required");
     }
@@ -91,7 +88,6 @@ public function createBadge(BadgeCreate b) returns Badge|error {
         return error("ValidationError", message = "badge_name required");
     }
 
-    // Validate volunteer exists
     stream<record {|int uid;|}, sql:Error?> vs = dbClient->query(
         `SELECT user_id as uid FROM users WHERE user_id = ${b.volunteer_id}`
     );
@@ -102,7 +98,6 @@ public function createBadge(BadgeCreate b) returns Badge|error {
         return error("NotFound", message = "Volunteer not found");
     }
 
-    // Insert badge
     sql:ExecutionResult r = check dbClient->execute(`
         INSERT INTO badges (volunteer_id, badge_name, badge_description, awarded_by)
         VALUES (${b.volunteer_id}, ${name}, ${b.badge_description ?: ()}, ${b.awarded_by ?: ()})

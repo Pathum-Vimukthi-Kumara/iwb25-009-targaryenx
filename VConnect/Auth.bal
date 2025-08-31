@@ -35,7 +35,6 @@ type User record {
     boolean is_active?;
 };
 
-// Minimal payload for login to avoid requiring user_type/name
 type LoginRequest record {
     string email;
     string password;
