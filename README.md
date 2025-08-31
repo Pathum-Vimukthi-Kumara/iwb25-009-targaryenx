@@ -1,4 +1,4 @@
-# V-Connect Frontend – Backend Integration Guide
+# V-Connect 
 
 ## Overview
 
@@ -113,9 +113,18 @@ npm run dev
 ---
 
 ## Contributing
-Pull requests are welcome! For major changes, please open an issue first to discuss what you would like to change.
+
+We welcome contributions from the community! 🎉
+
+- **Pull Requests:** Feel free to open a pull request with improvements, fixes, or new features.  
+- **Major Changes:** If you plan to make major changes, please open an issue first to discuss what you’d like to change.  
+
+Thank you for helping us improve this project!  
+
+— **TargaryenX Team**
 
 ---
+
 ## API Documentation
 
 For a complete list of API endpoints and request/response examples, see our interactive Postman documentation:
