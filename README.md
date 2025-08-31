@@ -6,6 +6,12 @@ V-Connect is a modern web platform designed to connect volunteers, organizations
 
 ---
 
+## 📂 Project Structure  
+
+
+# V-Connect Platform
+
+
 ## Architecture
 
 ### High-Level Architecture
@@ -30,21 +36,6 @@ V-Connect is a modern web platform designed to connect volunteers, organizations
 
 ---
 
-## 🛠 Tech Stack  
-
-- **Frontend:** React.js, Tailwind CSS, Framer Motion  
-- **Backend (Expected):** RESTful API (any language/framework)  
-- **Data Format:** JSON  
-- **Authentication:** JWT-based system  
-
----
-
-## 📂 Project Structure  
-
-
-# V-Connect Platform
-
-A modern volunteer and event management platform connecting volunteers, organizations, and administrators. Built with a React (Vite) frontend and a Ballerina backend.
 
 ---
 
