@@ -101,7 +101,7 @@ const Donations = () => {
   };
 
   return (
-    <section id="donations" className="py-20 scroll-section">
+    <section id="donations" className="py-20 scroll-section bg-gray-50">
       <div className="container mx-auto px-4">
         <motion.div
           ref={ref}
@@ -170,7 +170,7 @@ const Donations = () => {
                     transition={{ duration: 0.5, delay: index * 0.1 }}
                   >
                     <motion.div
-                      className="bg-white rounded-xl shadow-md overflow-hidden h-full flex flex-col"
+                      className="bg-white rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200 hover:-translate-y-1 h-full"
                       whileHover={{ y: -5 }}
                       transition={{
                         type: "spring",
@@ -178,78 +178,49 @@ const Donations = () => {
                         damping: 15,
                       }}
                     >
-                      <div className="bg-red-50 p-3 flex justify-center items-center border-b border-primary/10">
-                        <div className="w-12 h-12 sm:w-14 sm:h-14 bg-red-100 rounded-full flex items-center justify-center">
-                          <FiHeart
-                            size={24}
-                            className="text-red-500 sm:text-2xl"
-                          />
-                        </div>
-                      </div>
-                      <div className="p-5 flex-grow flex flex-col">
-                        <div className="flex justify-between items-start mb-2">
-                          <h3 className="text-xl font-semibold line-clamp-2">
-                            {campaign.title}
-                          </h3>
-                        </div>
-
-                        <div className="flex items-center text-primary font-medium mb-2 text-sm">
-                          <FiHeart className="mr-2 text-red-500" size={16} />
-                          <span>
-                            Target: {formatCurrency(campaign.target_amount)}
+                      <div className="p-6 h-full flex flex-col">
+                        <div className="flex justify-between items-center mb-3">
+                          <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                            campaign.status === 'active' ? 'bg-green-100 text-green-700' : 
+                            campaign.status === 'completed' ? 'bg-blue-100 text-blue-700' : 
+                            'bg-gray-100 text-gray-700'
+                          }`}>
+                            {campaign.status.charAt(0).toUpperCase() + campaign.status.slice(1)}
                           </span>
                         </div>
-
-                        <p className="text-gray-600 mb-4 line-clamp-3 text-sm">
+                        
+                        <h3 className="text-lg font-semibold text-gray-900 mb-3 line-clamp-2">
+                          {campaign.title}
+                        </h3>
+                        
+                        <p className="text-gray-600 text-sm mb-4 line-clamp-2">
                           {campaign.description}
                         </p>
-
-                        {/* Contact Information - Highlighted */}
-                        <motion.div
-                          className="border border-primary/20 p-3 rounded-lg mb-4"
-                          initial={{ opacity: 0.8 }}
-                          whileHover={{
-                            boxShadow: "0 4px 12px -2px rgba(0, 112, 243, 0.1)",
-                            scale: 1.01,
-                            opacity: 1,
-                          }}
-                          transition={{ duration: 0.2 }}
-                        >
-                          <h4 className="font-medium text-primary mb-2 text-sm">
-                            Contact Information:
-                          </h4>
-                          <div className="space-y-1.5">
-                            <motion.div
-                              className="flex items-start"
-                              whileHover={{ x: 3 }}
-                              transition={{ duration: 0.2 }}
-                            >
-                              <FiPhone
-                                className="text-primary mr-2 flex-shrink-0 mt-0.5"
-                                size={14}
-                              />
-                              <span className="text-xs sm:text-sm font-medium break-words">
-                                {campaign.contact_info}
-                              </span>
-                            </motion.div>
+                        
+                        <div className="bg-red-50 rounded-lg p-3 mb-4">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium text-gray-600">Target</span>
+                            <span className="text-lg font-bold text-red-600">
+                              {formatCurrency(campaign.target_amount)}
+                            </span>
                           </div>
-                        </motion.div>
-
-                        <div className="mt-auto flex flex-wrap justify-between text-xs sm:text-sm gap-2">
-                          <span
-                            className={`px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                              campaign.status === "active"
-                                ? "bg-green-100 text-green-800"
-                                : campaign.status === "completed"
-                                ? "bg-blue-100 text-blue-800"
-                                : "bg-gray-100 text-gray-800"
-                            }`}
-                          >
-                            {campaign.status.charAt(0).toUpperCase() +
-                              campaign.status.slice(1)}
-                          </span>
-
-                          <span className="text-xs sm:text-sm text-gray-500 truncate">
+                        </div>
+                        
+                        {/* Campaign Details - Highlighted Section */}
+                        <div className="bg-gray-50 rounded-lg p-4 mb-4 border border-gray-200">
+                          <h4 className="text-sm font-semibold text-gray-700 mb-3">Campaign Details</h4>
+                          <div className="space-y-3">
+                            <div>
+                              <p className="text-xs text-gray-500">Contact</p>
+                              <p className="text-sm font-semibold text-gray-800">
+                                {campaign.contact_info}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="flex justify-between items-center pt-4 border-t border-gray-100 mt-auto">
+                          <span className="text-xs text-gray-500">
                             Created: {formatDate(campaign.created_at)}
                           </span>
                         </div>

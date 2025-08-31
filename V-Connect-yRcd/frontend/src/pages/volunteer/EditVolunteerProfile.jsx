@@ -1,7 +1,17 @@
 import { useState, useEffect } from 'react';
 import { FiX } from 'react-icons/fi';
+import { motion, AnimatePresence } from 'framer-motion';
+import SavingSpinner from '../../components/SavingSpinner';
 
 const EditVolunteerProfile = ({ profile, onClose, onSave }) => {
+  const defaultSkills = [
+    'Event Planning', 'Teaching/Tutoring', 'Fundraising', 'Community Outreach',
+    'Administrative Support', 'Social Media Management', 'Photography', 'Graphic Design',
+    'Public Speaking', 'Leadership', 'Project Management', 'Customer Service',
+    'Data Entry', 'Research', 'Writing/Editing', 'Translation',
+    'Healthcare Support', 'Environmental Conservation', 'Animal Care', 'Food Service'
+  ];
+
   const [formData, setFormData] = useState({
     name: '',
     skills: '',
@@ -9,8 +19,14 @@ const EditVolunteerProfile = ({ profile, onClose, onSave }) => {
     profile_photo: ''
   });
 
+  const [selectedSkills, setSelectedSkills] = useState([]);
+  const [customSkill, setCustomSkill] = useState('');
+  const [showCustomInput, setShowCustomInput] = useState(false);
+
   useEffect(() => {
     if (profile) {
+      const skillsArray = profile.skills ? profile.skills.split(',').map(s => s.trim()) : [];
+      setSelectedSkills(skillsArray);
       setFormData({
         name: profile.name || '',
         skills: profile.skills || '', 
@@ -26,6 +42,26 @@ const EditVolunteerProfile = ({ profile, onClose, onSave }) => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSkillToggle = (skill) => {
+    setSelectedSkills(prev => {
+      const updated = prev.includes(skill) 
+        ? prev.filter(s => s !== skill)
+        : [...prev, skill];
+      setFormData(prevForm => ({ ...prevForm, skills: updated.join(', ') }));
+      return updated;
+    });
+  };
+
+  const handleCustomSkillAdd = () => {
+    if (customSkill.trim() && !selectedSkills.includes(customSkill.trim())) {
+      const updated = [...selectedSkills, customSkill.trim()];
+      setSelectedSkills(updated);
+      setFormData(prev => ({ ...prev, skills: updated.join(', ') }));
+      setCustomSkill('');
+      setShowCustomInput(false);
+    }
   };
 
   const handleFileChange = async (e) => {
@@ -84,8 +120,9 @@ const EditVolunteerProfile = ({ profile, onClose, onSave }) => {
       const updatedProfile = await response.json();
       console.log('Updated profile response:', updatedProfile);
       onSave(updatedProfile);
+      alert("Profile updated successfully");
       localStorage.setItem("profile", JSON.stringify(updatedProfile));
-      alert('Profile updated successfully!');
+      onClose();
     } catch (err) {
       console.error('Error updating profile:', err);
       setError(err.message || 'Something went wrong');
@@ -123,8 +160,70 @@ const EditVolunteerProfile = ({ profile, onClose, onSave }) => {
             </div>
 
             <div className="mb-4">
-              <label htmlFor="skills" className="block text-gray-700 font-medium mb-2">Skills</label>
-              <input type="text" id="skills" name="skills" value={formData.skills} onChange={handleChange} className="w-full px-3 py-2 border rounded-md" />
+              <label className="block text-gray-700 font-medium mb-2">Skills</label>
+              <div className="border rounded-md p-3 max-h-40 overflow-y-auto">
+                <div className="grid grid-cols-2 gap-2 mb-3">
+                  {defaultSkills.map(skill => (
+                    <label key={skill} className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={selectedSkills.includes(skill)}
+                        onChange={() => handleSkillToggle(skill)}
+                        className="rounded accent-primary"
+                      />
+                      <span className="text-sm">{skill}</span>
+                    </label>
+                  ))}
+                </div>
+                <div className="border-t pt-2">
+                  {!showCustomInput ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowCustomInput(true)}
+                      className="text-primary text-sm hover:underline"
+                    >
+                      + Add custom skill
+                    </button>
+                  ) : (
+                    <div className="flex space-x-2">
+                      <input
+                        type="text"
+                        value={customSkill}
+                        onChange={(e) => setCustomSkill(e.target.value)}
+                        placeholder="Enter custom skill"
+                        className="flex-1 px-2 py-1 border rounded text-sm"
+                        onKeyPress={(e) => e.key === 'Enter' && handleCustomSkillAdd()}
+                      />
+                      <button
+                        type="button"
+                        onClick={handleCustomSkillAdd}
+                        className="px-2 py-1 bg-primary text-white rounded text-sm"
+                      >
+                        Add
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setShowCustomInput(false); setCustomSkill(''); }}
+                        className="px-2 py-1 border rounded text-sm"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+              {selectedSkills.length > 0 && (
+                <div className="mt-2">
+                  <p className="text-sm text-gray-600 mb-1">Selected skills:</p>
+                  <div className="flex flex-wrap gap-1">
+                    {selectedSkills.map(skill => (
+                      <span key={skill} className="bg-primary/10 text-primary px-2 py-1 rounded-full text-xs">
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="mb-6">
@@ -133,10 +232,39 @@ const EditVolunteerProfile = ({ profile, onClose, onSave }) => {
             </div>
 
             <div className="flex justify-end space-x-3">
-              <button type="button" onClick={onClose} className="px-4 py-2 border rounded-md">Cancel</button>
-              <button type="submit" className="px-4 py-2 bg-primary text-white rounded-md" disabled={isSubmitting}>
-                {isSubmitting ? "Saving..." : "Save"}
-              </button>
+              <motion.button 
+                type="button" 
+                onClick={onClose} 
+                className="px-4 py-2 border rounded-md hover:bg-gray-50 transition-colors"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                disabled={isSubmitting}
+              >
+                Cancel
+              </motion.button>
+              <motion.button 
+                type="submit" 
+                className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors flex items-center min-w-[100px] justify-center" 
+                disabled={isSubmitting}
+                whileHover={!isSubmitting ? { scale: 1.02 } : {}}
+                whileTap={!isSubmitting ? { scale: 0.98 } : {}}
+              >
+                <AnimatePresence mode="wait">
+                  {isSubmitting ? (
+                    <SavingSpinner key="saving" message="Saving..." size="small" />
+                  ) : (
+                    <motion.span
+                      key="save"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.15 }}
+                    >
+                      Save
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </motion.button>
             </div>
           </form>
         </div>

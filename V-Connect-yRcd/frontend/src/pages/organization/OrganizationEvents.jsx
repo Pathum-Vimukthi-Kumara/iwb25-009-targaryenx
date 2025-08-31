@@ -1,22 +1,20 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import LoadingSpinner from "../../components/LoadingSpinner";
-import SavingSpinner from "../../components/SavingSpinner";
-import {
-  FiPlus,
-  FiEdit,
-  FiTrash2,
-  FiUsers,
-  FiCalendar,
-  FiMapPin,
-} from "react-icons/fi";
-import OrganizationSidebar from "./OrganizationSidebar";
-import { fetchWithFallback } from "../../utils/apiUtils";
+import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import LoadingSpinner from '../../components/LoadingSpinner';
+import SavingSpinner from '../../components/SavingSpinner';
+import { FiPlus, FiEdit, FiTrash2, FiUsers, FiCalendar, FiMapPin, FiMessageCircle } from 'react-icons/fi';
+import OrganizationSidebar from './OrganizationSidebar';
+import { fetchWithFallback } from '../../utils/apiUtils';
+import ChatNotificationButton from '../../components/ChatNotificationButton';
+import ChatModal from '../../components/ChatModal';
 
 const OrganizationEvents = () => {
   const [events, setEvents] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isCreating, setIsCreating] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -30,24 +28,105 @@ const OrganizationEvents = () => {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [volunteerProfile, setVolunteerProfile] = useState(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(false);
-  // Fetch volunteer profile by ID
+  // Chat modal state
+  const [showChatModal, setShowChatModal] = useState(false);
+  const [chatVolunteer, setChatVolunteer] = useState(null); // {volunteer_id, name}
+  const [chatMessages, setChatMessages] = useState([]);
+  const [chatLoading, setChatLoading] = useState(false);
+  const [chatError, setChatError] = useState(null);
+  const [chatInput, setChatInput] = useState("");
+  const [chatSending, setChatSending] = useState(false);
+  const chatBottomRef = useRef(null);
+
+  // Fetch chat messages for event/volunteer
+  const openChatModal = async (volunteer) => {
+    console.log('openChatModal called with:', volunteer);
+    console.log('selectedEvent:', selectedEvent);
+    
+    if (!volunteer || !volunteer.volunteer_id || !selectedEvent || !selectedEvent.event_id) {
+      console.error('Invalid parameters:', { volunteer, selectedEvent });
+      setChatError('Invalid chat parameters');
+      return;
+    }
+    
+    setChatVolunteer(volunteer);
+    setShowChatModal(true);
+    setChatMessages([]);
+    setChatError(null);
+    setChatLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const eventId = selectedEvent.event_id;
+      const volunteerId = volunteer.volunteer_id;
+      
+      console.log('Fetching messages for eventId:', eventId, 'volunteerId:', volunteerId);
+      
+      // Use private messaging endpoint
+      const res = await fetch(`http://localhost:9000/api/chat/events/${eventId}/messages/volunteer/${volunteerId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('Failed to fetch messages');
+      const data = await res.json();
+      setChatMessages(Array.isArray(data) ? data : []);
+    } catch (e) {
+      console.error('Chat fetch error:', e);
+      setChatError('Failed to load chat messages.');
+    } finally {
+      setChatLoading(false);
+      setTimeout(() => {
+        if (chatBottomRef.current) chatBottomRef.current.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    }
+  };
+
+  // Send a new chat message
+  const sendChatMessage = async (e) => {
+    e.preventDefault();
+    if (!chatInput.trim()) return;
+    setChatSending(true);
+    setChatError(null);
+    try {
+      const token = localStorage.getItem('token');
+      const eventId = selectedEvent.event_id;
+      // Use private messaging endpoint
+      const res = await fetch(`http://localhost:9000/api/chat/events/${eventId}/messages/volunteer/${chatVolunteer.volunteer_id}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          message: chatInput.trim()
+        })
+      });
+      if (!res.ok) throw new Error('Failed to send message');
+      setChatInput("");
+      // Re-fetch messages after sending
+      await openChatModal(chatVolunteer);
+    } catch (e) {
+      setChatError('Failed to send message.');
+    } finally {
+      setChatSending(false);
+      setTimeout(() => {
+        if (chatBottomRef.current) chatBottomRef.current.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    }
+  };
   const handleViewVolunteerProfile = async (volunteerId) => {
     setIsLoadingProfile(true);
     setShowProfileModal(true);
     setVolunteerProfile(null);
     try {
-      const res = await fetch(
-        `http://localhost:9000/pub/volunteers/${volunteerId}/profile`
-      );
+      const res = await fetch(`http://localhost:9000/pub/volunteers/${volunteerId}/profile`);
       if (res.ok) {
         const data = await res.json();
-        console.log("Volunteer profile data:", data);
+        console.log('Volunteer profile data:', data);
         setVolunteerProfile(data);
       } else {
-        setVolunteerProfile({ error: "Profile not found" });
+        setVolunteerProfile({ error: 'Profile not found' });
       }
     } catch (e) {
-      setVolunteerProfile({ error: "Failed to load profile" });
+      setVolunteerProfile({ error: 'Failed to load profile' });
     } finally {
       setIsLoadingProfile(false);
     }
@@ -116,7 +195,7 @@ const OrganizationEvents = () => {
 
   const fetchEventApplications = async (eventId) => {
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem('token');
       const response = await fetch(`/api/org/events/${eventId}/applications`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -124,56 +203,40 @@ const OrganizationEvents = () => {
         },
         credentials: "include",
       });
-
       if (!response.ok) {
         throw new Error("Failed to fetch applications");
       }
-
       const data = await response.json();
-      console.log("Fetched applications:", data); // Log to see the actual data structure
-
       // Save a copy of the current applications to help preserve status changes
       const currentApplications = [...eventApplications];
-
       // Get any stored application statuses from localStorage
-      const storedApplications = JSON.parse(
-        localStorage.getItem("applicationStatuses") || "{}"
-      );
+      const storedApplications = JSON.parse(localStorage.getItem('applicationStatuses') || '{}');
 
       // Get all unique volunteer IDs
-      const volunteerIds = [...new Set(data.map((app) => app.volunteer_id))];
+      const volunteerIds = [...new Set(data.map(app => app.volunteer_id))];
       // Fetch volunteer names in parallel
       const volunteerNames = {};
-      await Promise.all(
-        volunteerIds.map(async (id) => {
-          try {
-            const user = await fetchWithFallback(`/pub/users/${id}`);
-            if (user) {
-              if (
-                !user.name ||
-                user.name.trim().toLowerCase() === "volunteer"
-              ) {
-                volunteerNames[id] = user.email || `Volunteer #${id}`;
-              } else {
-                volunteerNames[id] = user.name;
-              }
+      await Promise.all(volunteerIds.map(async (id) => {
+        try {
+          const user = await fetchWithFallback(`/pub/users/${id}`);
+          if (user) {
+            if (!user.name || user.name.trim().toLowerCase() === 'volunteer') {
+              volunteerNames[id] = user.email || `Volunteer #${id}`;
             } else {
-              volunteerNames[id] = `Volunteer #${id}`;
+              volunteerNames[id] = user.name;
             }
-          } catch {
+          } else {
             volunteerNames[id] = `Volunteer #${id}`;
           }
-        })
-      );
+        } catch {
+          volunteerNames[id] = `Volunteer #${id}`;
+        }
+      }));
 
       // Transform the data to ensure it has all required fields
-      const processedApplications = data.map((app) => {
-        const existingApp = currentApplications.find(
-          (existing) => existing.application_id === app.application_id
-        );
+      const processedApplications = data.map(app => {
+        const existingApp = currentApplications.find(existing => existing.application_id === app.application_id);
         const storedStatus = storedApplications[app.application_id];
-
-        // Priority: 1. localStorage, 2. existing app state, 3. server status (with mapping)
         let effectiveStatus;
         if (storedStatus) {
           effectiveStatus = storedStatus;
@@ -183,17 +246,13 @@ const OrganizationEvents = () => {
           effectiveStatus =
             app.status === "accepted" ? "approved" : app.status || "pending";
         }
-
         return {
           ...app,
-          volunteer_name:
-            volunteerNames[app.volunteer_id] ||
-            `Volunteer #${app.volunteer_id}`,
+          volunteer_name: volunteerNames[app.volunteer_id] || `Volunteer #${app.volunteer_id}`,
           status: effectiveStatus,
-          message: app.message || "",
+          message: app.message || ''
         };
       });
-
       setEventApplications(processedApplications);
     } catch (error) {
       console.error("Error fetching applications:", error);
@@ -212,6 +271,7 @@ const OrganizationEvents = () => {
 
   const handleCreateEvent = async (e) => {
     e.preventDefault();
+    setIsCreating(true);
     try {
       const token = localStorage.getItem("token");
       const organizationId = localStorage.getItem("user_id");
@@ -245,8 +305,8 @@ const OrganizationEvents = () => {
         required_volunteers: 0,
       });
     } catch (error) {
-      console.error("Error creating event:", error);
-      setError("Failed to create event. Please try again.");
+      console.error('Error creating event:', error);
+      setError('Failed to create event. Please try again.');
     } finally {
       setIsCreating(false);
     }
@@ -254,6 +314,7 @@ const OrganizationEvents = () => {
 
   const handleEditEvent = async (e) => {
     e.preventDefault();
+    setIsEditing(true);
     try {
       const token = localStorage.getItem("token");
 
@@ -277,8 +338,8 @@ const OrganizationEvents = () => {
       fetchEvents();
       setShowEditModal(false);
     } catch (error) {
-      console.error("Error updating event:", error);
-      setError("Failed to update event. Please try again.");
+      console.error('Error updating event:', error);
+      setError('Failed to update event. Please try again.');
     } finally {
       setIsEditing(false);
     }
@@ -449,6 +510,7 @@ const OrganizationEvents = () => {
 
   const handleSubmitFeedback = async (e) => {
     e.preventDefault();
+    setIsSubmittingFeedback(true);
     try {
       const token = localStorage.getItem("token");
       const organizationId = localStorage.getItem("user_id");
@@ -555,8 +617,8 @@ const OrganizationEvents = () => {
         setSuccessMessage(null);
       }, 3000);
     } catch (error) {
-      console.error("Error submitting feedback:", error);
-      setError(error.message || "Failed to submit feedback. Please try again.");
+      console.error('Error submitting feedback:', error);
+      setError(error.message || 'Failed to submit feedback. Please try again.');
     } finally {
       setIsSubmittingFeedback(false);
     }
@@ -607,1015 +669,774 @@ const OrganizationEvents = () => {
               {successMessage}
             </div>
           )}
-
-          {isLoading ? (
-            <LoadingSpinner />
-          ) : (
-            <>
-              {/* Events List */}
-              {events.length === 0 ? (
-                <div className="bg-white rounded-lg shadow p-6 text-center">
-                  <p className="text-gray-500 mb-4">
-                    You haven't created any events yet.
-                  </p>
-                  <button
-                    onClick={() => setShowCreateModal(true)}
-                    className="bg-primary text-white py-2 px-4 rounded-md hover:bg-primary/90 transition-colors"
-                  >
-                    Create Your First Event
-                  </button>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {events.map((event) => {
-                    const eventDate = new Date(event.event_date);
-                    const isUpcoming = eventDate >= new Date();
-
-                    return (
-                      <div
-                        key={event.event_id}
-                        className="bg-white rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200 hover:-translate-y-1"
-                      >
-                        <div className="p-6">
-                          <div className="flex justify-between items-start mb-3">
-                            <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">
-                              {event.title}
-                            </h3>
-                            <div className="flex space-x-1 ml-2">
-                              <button
-                                onClick={() => {
-                                  setCurrentEvent(event);
-                                  setEventForm({
-                                    title: event.title,
-                                    description: event.description,
-                                    location: event.location,
-                                    event_date: formatDateForInput(
-                                      event.event_date
-                                    ),
-                                    required_volunteers:
-                                      event.required_volunteers,
-                                  });
-                                  setShowEditModal(true);
-                                }}
-                                className="text-blue-600 hover:text-blue-800 p-1 rounded"
-                              >
-                                <FiEdit size={16} />
-                              </button>
-                              <button
-                                onClick={() =>
-                                  handleDeleteEvent(event.event_id)
-                                }
-                                className="text-red-600 hover:text-red-800 p-1 rounded"
-                              >
-                                <FiTrash2 size={16} />
-                              </button>
-                            </div>
-                          </div>
-
-                          <span
-                            className={`text-xs px-2 py-1 rounded-full font-medium mb-4 inline-block ${
-                              isUpcoming
-                                ? "bg-green-100 text-green-700"
-                                : "bg-gray-100 text-gray-700"
-                            }`}
-                          >
-                            {isUpcoming ? "Upcoming" : "Past"}
-                          </span>
-
-                          <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                            {event.description}
-                          </p>
-
-                          <div className="space-y-3 mb-5">
-                            <div className="flex items-center text-sm text-gray-600">
-                              <FiCalendar
-                                className="text-gray-400 mr-3"
-                                size={16}
-                              />
-                              <span className="font-medium">
-                                {formatDate(event.event_date)}
-                              </span>
-                            </div>
-
-                            <div className="flex items-center text-sm text-gray-600">
-                              <FiMapPin
-                                className="text-gray-400 mr-3"
-                                size={16}
-                              />
-                              <span className="truncate">{event.location}</span>
-                            </div>
-
-                            <div className="flex items-center text-sm text-gray-600">
-                              <FiUsers
-                                className="text-gray-400 mr-3"
-                                size={16}
-                              />
-                              <span>
-                                {event.required_volunteers} volunteers needed
-                              </span>
-                            </div>
-                          </div>
-
-                          <div className="flex gap-2 pt-4 border-t border-gray-100">
-                            <button
-                              onClick={() => handleViewEventDetails(event)}
-                              className="flex-1 bg-primary/10 text-primary hover:bg-primary/20 px-4 py-2 rounded-lg transition-colors text-sm font-medium"
+        
+        {isLoading ? (
+          <LoadingSpinner />
+        ) : (
+          <>
+            {/* Events List */}
+            {events.length === 0 ? (
+              <div className="bg-white rounded-lg shadow p-6 text-center">
+                <p className="text-gray-500 mb-4">You haven't created any events yet.</p>
+                <button 
+                  onClick={() => setShowCreateModal(true)}
+                  className="bg-primary text-white py-2 px-4 rounded-md hover:bg-primary/90 transition-colors"
+                >
+                  Create Your First Event
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {events.map(event => {
+                  const eventDate = new Date(event.event_date);
+                  const isUpcoming = eventDate >= new Date();
+                  
+                  return (
+                    <div key={event.event_id} className="bg-white rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200 hover:-translate-y-1">
+                      <div className="p-6">
+                        <div className="flex justify-between items-start mb-3">
+                          <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">{event.title}</h3>
+                          <div className="flex space-x-1 ml-2">
+                            <button 
+                              onClick={() => {
+                                setCurrentEvent(event);
+                                setEventForm({
+                                  title: event.title,
+                                  description: event.description,
+                                  location: event.location,
+                                  event_date: formatDateForInput(event.event_date),
+                                  required_volunteers: event.required_volunteers
+                                });
+                                setShowEditModal(true);
+                              }}
+                              className="text-blue-600 hover:text-blue-800 p-1 rounded"
                             >
-                              View Details
+                              <FiEdit size={16} />
+                            </button>
+                            <button 
+                              onClick={() => handleDeleteEvent(event.event_id)}
+                              className="text-red-600 hover:text-red-800 p-1 rounded"
+                            >
+                              <FiTrash2 size={16} />
                             </button>
                           </div>
                         </div>
+                        
+                        <span className={`text-xs px-2 py-1 rounded-full font-medium mb-4 inline-block ${
+                          isUpcoming ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
+                        }`}>
+                          {isUpcoming ? 'Upcoming' : 'Past'}
+                        </span>
+                        
+                        <p className="text-gray-600 text-sm mb-4 line-clamp-2">{event.description}</p>
+                        
+                        <div className="space-y-3 mb-5">
+                          <div className="flex items-center text-sm text-gray-600">
+                            <FiCalendar className="text-gray-400 mr-3" size={16} />
+                            <span className="font-medium">{formatDate(event.event_date)}</span>
+                          </div>
+                          
+                          <div className="flex items-center text-sm text-gray-600">
+                            <FiMapPin className="text-gray-400 mr-3" size={16} />
+                            <span className="truncate">{event.location}</span>
+                          </div>
+                          
+                          <div className="flex items-center text-sm text-gray-600">
+                            <FiUsers className="text-gray-400 mr-3" size={16} />
+                            <span>{event.required_volunteers} volunteers needed</span>
+                          </div>
+                        </div>
+                        
+                        <div className="flex gap-2 pt-4 border-t border-gray-100">
+                          <button
+                            onClick={() => handleViewEventDetails(event)}
+                            className="flex-1 bg-primary/10 text-primary hover:bg-primary/20 px-4 py-2 rounded-lg transition-colors text-sm font-medium"
+                          >
+                            View Details
+                          </button>
+                        </div>
                       </div>
-                    );
-                  })}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </>
+        )}
+        
+        {/* Create Event Modal */}
+        {showCreateModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-start md:items-center justify-center z-50 p-4 overflow-y-auto">
+            <div className="bg-white rounded-xl shadow-lg w-full max-w-md mx-auto my-4 md:my-8 overflow-hidden">
+              <div className="flex justify-between items-center p-3 sm:p-4 md:p-6 border-b sticky top-0 bg-white z-10">
+                <h3 className="text-base sm:text-lg font-bold">Create New Event</h3>
+                <button 
+                  onClick={() => setShowCreateModal(false)}
+                  className="text-gray-500 hover:text-gray-700 text-xl ml-4"
+                >
+                  &times;
+                </button>
+              </div>
+              
+              <form onSubmit={handleCreateEvent} className="p-4 sm:p-6">
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Event Title
+                  </label>
+                  <input 
+                    type="text"
+                    required
+                    value={eventForm.title}
+                    onChange={e => setEventForm({...eventForm, title: e.target.value})}
+                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring focus:ring-primary/50"
+                    placeholder="Enter a clear, descriptive title"
+                  />
                 </div>
-              )}
-            </>
-          )}
-
-          {/* Create Event Modal */}
-          {showCreateModal && (
-            <div className="fixed inset-0 bg-black/50 flex items-start md:items-center justify-center z-50 p-4 overflow-y-auto">
-              <div className="bg-white rounded-xl shadow-lg w-full max-w-md mx-auto my-4 md:my-8 overflow-hidden">
-                <div className="flex justify-between items-center p-3 sm:p-4 md:p-6 border-b sticky top-0 bg-white z-10">
-                  <h3 className="text-base sm:text-lg font-bold">
-                    Create New Event
-                  </h3>
-                  <button
+                
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Description
+                  </label>
+                  <textarea 
+                    required
+                    value={eventForm.description}
+                    onChange={e => setEventForm({...eventForm, description: e.target.value})}
+                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring focus:ring-primary/50"
+                    rows="4"
+                    placeholder="Describe your event's purpose and activities"
+                  />
+                </div>
+                
+                <div className="mb-4">
+                  <label className="flex items-center text-sm font-medium text-gray-700 mb-1">
+                    <FiMapPin className="mr-2 text-primary" />
+                    Location
+                  </label>
+                  <input 
+                    type="text"
+                    required
+                    value={eventForm.location}
+                    onChange={e => setEventForm({...eventForm, location: e.target.value})}
+                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring focus:ring-primary/50"
+                    placeholder="Enter the event location"
+                  />
+                </div>
+                
+                <div className="mb-4">
+                  <label className="flex items-center text-sm font-medium text-gray-700 mb-1">
+                    <FiCalendar className="mr-2 text-primary" />
+                    Event Date
+                  </label>
+                  <input 
+                    type="date"
+                    required
+                    value={eventForm.event_date}
+                    onChange={e => setEventForm({...eventForm, event_date: e.target.value})}
+                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring focus:ring-primary/50"
+                  />
+                </div>
+                
+                <div className="mb-6">
+                  <label className="flex items-center text-sm font-medium text-gray-700 mb-1">
+                    <FiUsers className="mr-2 text-primary" />
+                    Required Volunteers
+                  </label>
+                  <input 
+                    type="number"
+                    required
+                    min="1"
+                    value={eventForm.required_volunteers}
+                    onChange={e => setEventForm({...eventForm, required_volunteers: e.target.value})}
+                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring focus:ring-primary/50"
+                    placeholder="Enter number of volunteers needed"
+                  />
+                </div>
+                
+                <div className="flex justify-end">
+                  <motion.button 
+                    type="button"
                     onClick={() => setShowCreateModal(false)}
-                    className="text-gray-500 hover:text-gray-700 text-xl ml-4"
+                    className="bg-gray-200 text-gray-700 py-2 px-4 rounded-md mr-2 hover:bg-gray-300 transition-colors"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    disabled={isCreating}
                   >
-                    &times;
-                  </button>
+                    Cancel
+                  </motion.button>
+                  <motion.button 
+                    type="submit"
+                    className="bg-primary text-white py-2 px-4 rounded-md hover:bg-primary/90 transition-colors flex items-center min-w-[130px] justify-center"
+                    whileHover={!isCreating ? { scale: 1.02 } : {}}
+                    whileTap={!isCreating ? { scale: 0.98 } : {}}
+                    disabled={isCreating}
+                  >
+                    <AnimatePresence mode="wait">
+                      {isCreating ? (
+                        <SavingSpinner key="creating" message="Creating..." size="small" />
+                      ) : (
+                        <motion.div
+                          key="create"
+                          className="flex items-center"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 0.15 }}
+                        >
+                          <FiPlus className="mr-2" /> Create Event
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </motion.button>
                 </div>
-
-                <form onSubmit={handleCreateEvent} className="p-4 sm:p-6">
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Event Title
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={eventForm.title}
-                      onChange={(e) =>
-                        setEventForm({ ...eventForm, title: e.target.value })
-                      }
-                      className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring focus:ring-primary/50"
-                      placeholder="Enter a clear, descriptive title"
-                    />
-                  </div>
-
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Description
-                    </label>
-                    <textarea
-                      required
-                      value={eventForm.description}
-                      onChange={(e) =>
-                        setEventForm({
-                          ...eventForm,
-                          description: e.target.value,
-                        })
-                      }
-                      className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring focus:ring-primary/50"
-                      rows="4"
-                      placeholder="Describe your event's purpose and activities"
-                    />
-                  </div>
-
-                  <div className="mb-4">
-                    <label className="flex items-center text-sm font-medium text-gray-700 mb-1">
-                      <FiMapPin className="mr-2 text-primary" />
-                      Location
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={eventForm.location}
-                      onChange={(e) =>
-                        setEventForm({ ...eventForm, location: e.target.value })
-                      }
-                      className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring focus:ring-primary/50"
-                      placeholder="Enter the event location"
-                    />
-                  </div>
-
-                  <div className="mb-4">
-                    <label className="flex items-center text-sm font-medium text-gray-700 mb-1">
-                      <FiCalendar className="mr-2 text-primary" />
-                      Event Date
-                    </label>
-                    <input
-                      type="date"
-                      required
-                      value={eventForm.event_date}
-                      onChange={(e) =>
-                        setEventForm({
-                          ...eventForm,
-                          event_date: e.target.value,
-                        })
-                      }
-                      className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring focus:ring-primary/50"
-                    />
-                  </div>
-
-                  <div className="mb-6">
-                    <label className="flex items-center text-sm font-medium text-gray-700 mb-1">
-                      <FiUsers className="mr-2 text-primary" />
-                      Required Volunteers
-                    </label>
-                    <input
-                      type="number"
-                      required
-                      min="1"
-                      value={eventForm.required_volunteers}
-                      onChange={(e) =>
-                        setEventForm({
-                          ...eventForm,
-                          required_volunteers: e.target.value,
-                        })
-                      }
-                      className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring focus:ring-primary/50"
-                      placeholder="Enter number of volunteers needed"
-                    />
-                  </div>
-
-                  <div className="flex justify-end">
-                    <motion.button
-                      type="button"
-                      onClick={() => setShowCreateModal(false)}
-                      className="bg-gray-200 text-gray-700 py-2 px-4 rounded-md mr-2 hover:bg-gray-300 transition-colors"
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      disabled={isCreating}
-                    >
-                      Cancel
-                    </motion.button>
-                    <motion.button
-                      type="submit"
-                      className="bg-primary text-white py-2 px-4 rounded-md hover:bg-primary/90 transition-colors flex items-center min-w-[130px] justify-center"
-                      whileHover={!isCreating ? { scale: 1.02 } : {}}
-                      whileTap={!isCreating ? { scale: 0.98 } : {}}
-                      disabled={isCreating}
-                    >
-                      <AnimatePresence mode="wait">
-                        {isCreating ? (
-                          <SavingSpinner
-                            key="creating"
-                            message="Creating..."
-                            size="small"
-                          />
-                        ) : (
-                          <motion.div
-                            key="create"
-                            className="flex items-center"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ duration: 0.15 }}
-                          >
-                            <FiPlus className="mr-2" /> Create Event
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </motion.button>
-                  </div>
-                </form>
-              </div>
+              </form>
             </div>
-          )}
-
-          {/* Edit Event Modal */}
-          {showEditModal && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-              <div className="bg-white rounded-xl shadow-lg w-full max-w-md mx-auto my-8 overflow-hidden">
-                <div className="flex justify-between items-center p-4 sm:p-6 border-b sticky top-0 bg-white z-10">
-                  <h3 className="text-lg font-bold">Edit Event</h3>
-                  <button
+          </div>
+        )}
+        
+        {/* Edit Event Modal */}
+        {showEditModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+            <div className="bg-white rounded-xl shadow-lg w-full max-w-md mx-auto my-8 overflow-hidden">
+              <div className="flex justify-between items-center p-4 sm:p-6 border-b sticky top-0 bg-white z-10">
+                <h3 className="text-lg font-bold">Edit Event</h3>
+                <button 
+                  onClick={() => setShowEditModal(false)}
+                  className="text-gray-500 hover:text-gray-700 text-xl ml-4"
+                >
+                  &times;
+                </button>
+              </div>
+              
+              <form onSubmit={handleEditEvent} className="p-4 sm:p-6">
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Event Title
+                  </label>
+                  <input 
+                    type="text"
+                    required
+                    value={eventForm.title}
+                    onChange={e => setEventForm({...eventForm, title: e.target.value})}
+                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring focus:ring-primary/50"
+                  />
+                </div>
+                
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Description
+                  </label>
+                  <textarea 
+                    required
+                    value={eventForm.description}
+                    onChange={e => setEventForm({...eventForm, description: e.target.value})}
+                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring focus:ring-primary/50"
+                    rows="4"
+                  />
+                </div>
+                
+                <div className="mb-4">
+                  <label className="flex items-center text-sm font-medium text-gray-700 mb-1">
+                    <FiMapPin className="mr-2 text-primary" />
+                    Location
+                  </label>
+                  <input 
+                    type="text"
+                    required
+                    value={eventForm.location}
+                    onChange={e => setEventForm({...eventForm, location: e.target.value})}
+                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring focus:ring-primary/50"
+                  />
+                </div>
+                
+                <div className="mb-4">
+                  <label className="flex items-center text-sm font-medium text-gray-700 mb-1">
+                    <FiCalendar className="mr-2 text-primary" />
+                    Event Date
+                  </label>
+                  <input 
+                    type="date"
+                    required
+                    value={eventForm.event_date}
+                    onChange={e => setEventForm({...eventForm, event_date: e.target.value})}
+                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring focus:ring-primary/50"
+                  />
+                </div>
+                
+                <div className="mb-6">
+                  <label className="flex items-center text-sm font-medium text-gray-700 mb-1">
+                    <FiUsers className="mr-2 text-primary" />
+                    Required Volunteers
+                  </label>
+                  <input 
+                    type="number"
+                    required
+                    min="1"
+                    value={eventForm.required_volunteers}
+                    onChange={e => setEventForm({...eventForm, required_volunteers: e.target.value})}
+                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring focus:ring-primary/50"
+                  />
+                </div>
+                
+                <div className="flex justify-end">
+                  <motion.button 
+                    type="button"
                     onClick={() => setShowEditModal(false)}
-                    className="text-gray-500 hover:text-gray-700 text-xl ml-4"
+                    className="bg-gray-200 text-gray-700 py-2 px-4 rounded-md mr-2 hover:bg-gray-300 transition-colors"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    disabled={isEditing}
                   >
-                    &times;
-                  </button>
+                    Cancel
+                  </motion.button>
+                  <motion.button 
+                    type="submit"
+                    className="bg-primary text-white py-2 px-4 rounded-md hover:bg-primary/90 transition-colors flex items-center min-w-[140px] justify-center"
+                    whileHover={!isEditing ? { scale: 1.02 } : {}}
+                    whileTap={!isEditing ? { scale: 0.98 } : {}}
+                    disabled={isEditing}
+                  >
+                    <AnimatePresence mode="wait">
+                      {isEditing ? (
+                        <SavingSpinner key="saving" message="Saving..." size="small" />
+                      ) : (
+                        <motion.div
+                          key="save"
+                          className="flex items-center"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 0.15 }}
+                        >
+                          <FiEdit className="mr-2" /> Save Changes
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </motion.button>
                 </div>
-
-                <form onSubmit={handleEditEvent} className="p-4 sm:p-6">
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Event Title
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={eventForm.title}
-                      onChange={(e) =>
-                        setEventForm({ ...eventForm, title: e.target.value })
-                      }
-                      className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring focus:ring-primary/50"
-                    />
-                  </div>
-
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Description
-                    </label>
-                    <textarea
-                      required
-                      value={eventForm.description}
-                      onChange={(e) =>
-                        setEventForm({
-                          ...eventForm,
-                          description: e.target.value,
-                        })
-                      }
-                      className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring focus:ring-primary/50"
-                      rows="4"
-                    />
-                  </div>
-
-                  <div className="mb-4">
-                    <label className="flex items-center text-sm font-medium text-gray-700 mb-1">
-                      <FiMapPin className="mr-2 text-primary" />
-                      Location
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={eventForm.location}
-                      onChange={(e) =>
-                        setEventForm({ ...eventForm, location: e.target.value })
-                      }
-                      className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring focus:ring-primary/50"
-                    />
-                  </div>
-
-                  <div className="mb-4">
-                    <label className="flex items-center text-sm font-medium text-gray-700 mb-1">
-                      <FiCalendar className="mr-2 text-primary" />
-                      Event Date
-                    </label>
-                    <input
-                      type="date"
-                      required
-                      value={eventForm.event_date}
-                      onChange={(e) =>
-                        setEventForm({
-                          ...eventForm,
-                          event_date: e.target.value,
-                        })
-                      }
-                      className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring focus:ring-primary/50"
-                    />
-                  </div>
-
-                  <div className="mb-6">
-                    <label className="flex items-center text-sm font-medium text-gray-700 mb-1">
-                      <FiUsers className="mr-2 text-primary" />
-                      Required Volunteers
-                    </label>
-                    <input
-                      type="number"
-                      required
-                      min="1"
-                      value={eventForm.required_volunteers}
-                      onChange={(e) =>
-                        setEventForm({
-                          ...eventForm,
-                          required_volunteers: e.target.value,
-                        })
-                      }
-                      className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring focus:ring-primary/50"
-                    />
-                  </div>
-
-                  <div className="flex justify-end">
-                    <motion.button
-                      type="button"
-                      onClick={() => setShowEditModal(false)}
-                      className="bg-gray-200 text-gray-700 py-2 px-4 rounded-md mr-2 hover:bg-gray-300 transition-colors"
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      disabled={isEditing}
-                    >
-                      Cancel
-                    </motion.button>
-                    <motion.button
-                      type="submit"
-                      className="bg-primary text-white py-2 px-4 rounded-md hover:bg-primary/90 transition-colors flex items-center min-w-[140px] justify-center"
-                      whileHover={!isEditing ? { scale: 1.02 } : {}}
-                      whileTap={!isEditing ? { scale: 0.98 } : {}}
-                      disabled={isEditing}
-                    >
-                      <AnimatePresence mode="wait">
-                        {isEditing ? (
-                          <SavingSpinner
-                            key="saving"
-                            message="Saving..."
-                            size="small"
-                          />
-                        ) : (
-                          <motion.div
-                            key="save"
-                            className="flex items-center"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ duration: 0.15 }}
-                          >
-                            <FiEdit className="mr-2" /> Save Changes
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </motion.button>
-                  </div>
-                </form>
-              </div>
+              </form>
             </div>
-          )}
-
-          {/* Event Details Modal */}
-          {showEventDetails && selectedEvent && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-              <div className="bg-white rounded-lg shadow-lg w-full max-w-4xl mx-auto my-8 max-h-[90vh] flex flex-col">
-                <div className="flex justify-between items-center p-4 sm:p-6 border-b sticky top-0 bg-white z-10">
-                  <h3 className="text-lg font-bold truncate">
-                    {selectedEvent.title}
-                  </h3>
-                  <button
-                    onClick={() => setShowEventDetails(false)}
-                    className="text-gray-500 hover:text-gray-700 text-xl ml-4"
-                  >
-                    &times;
-                  </button>
-                </div>
-
-                <div className="p-4 sm:p-6 overflow-y-auto">
-                  {/* Success message in modal */}
-                  {successMessage && (
-                    <div className="bg-green-50 text-green-600 p-3 rounded-md mb-4 animate-pulse">
-                      {successMessage}
+          </div>
+        )}
+        
+        {/* Event Details Modal */}
+        {showEventDetails && selectedEvent && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+            <div className="bg-white rounded-lg shadow-lg w-full max-w-4xl mx-auto my-8 max-h-[90vh] flex flex-col">
+              <div className="flex justify-between items-center p-4 sm:p-6 border-b sticky top-0 bg-white z-10">
+                <h3 className="text-lg font-bold truncate">{selectedEvent.title}</h3>
+                <button 
+                  onClick={() => setShowEventDetails(false)}
+                  className="text-gray-500 hover:text-gray-700 text-xl ml-4"
+                >
+                  &times;
+                </button>
+              </div>
+              
+              <div className="p-4 sm:p-6 overflow-y-auto">
+                {/* Success message in modal */}
+                {successMessage && (
+                  <div className="bg-green-50 text-green-600 p-3 rounded-md mb-4 animate-pulse">
+                    {successMessage}
+                  </div>
+                )}
+                
+                {/* Event Details */}
+                <div className="mb-6 pb-4 border-b">
+                  <h4 className="text-md font-bold mb-4">Event Information</h4>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-gray-500">Date</p>
+                      <p className="font-medium">{formatDate(selectedEvent.event_date)}</p>
                     </div>
-                  )}
-
-                  {/* Event Details */}
-                  <div className="mb-6 pb-4 border-b">
-                    <h4 className="text-md font-bold mb-4">
-                      Event Information
-                    </h4>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-sm text-gray-500">Date</p>
-                        <p className="font-medium">
-                          {formatDate(selectedEvent.event_date)}
-                        </p>
-                      </div>
-
-                      <div>
-                        <p className="text-sm text-gray-500">Location</p>
-                        <p className="font-medium">{selectedEvent.location}</p>
-                      </div>
-
-                      <div>
-                        <p className="text-sm text-gray-500">
-                          Required Volunteers
-                        </p>
-                        <p className="font-medium">
-                          {selectedEvent.required_volunteers}
-                        </p>
-                      </div>
+                    
+                    <div>
+                      <p className="text-sm text-gray-500">Location</p>
+                      <p className="font-medium">{selectedEvent.location}</p>
                     </div>
-
-                    <div className="mt-4">
-                      <p className="text-sm text-gray-500">Description</p>
-                      <p className="whitespace-pre-line">
-                        {selectedEvent.description}
-                      </p>
+                    
+                    <div>
+                      <p className="text-sm text-gray-500">Required Volunteers</p>
+                      <p className="font-medium">{selectedEvent.required_volunteers}</p>
                     </div>
                   </div>
-
-                  {/* Applications Tabs */}
-                  <div>
-                    <h4 className="text-md font-bold mb-4">
-                      Volunteer Applications
-                    </h4>
-
-                    {eventApplications.length === 0 ? (
-                      <p className="text-gray-500">
-                        No applications received yet.
-                      </p>
-                    ) : (
-                      <>
+                  
+                  <div className="mt-4">
+                    <p className="text-sm text-gray-500">Description</p>
+                    <p className="whitespace-pre-line">{selectedEvent.description}</p>
+                  </div>
+                </div>
+                
+                {/* Applications Tabs */}
+                <div>
+                  <h4 className="text-md font-bold mb-4">Volunteer Applications</h4>
+                  
+                  {eventApplications.length === 0 ? (
+                    <p className="text-gray-500">No applications received yet.</p>
+                  ) : (
+                    <>
                         {/* Pending Applications */}
-                        <div className="mb-6">
-                          <h5 className="text-sm font-medium mb-2">
-                            Pending Applications
-                          </h5>
-                          {eventApplications.filter(
-                            (app) => app.status === "pending"
-                          ).length === 0 ? (
-                            <p className="text-gray-500 text-sm">
-                              No pending applications.
-                            </p>
-                          ) : (
-                            <div className="overflow-x-auto rounded-md border">
-                              <table className="min-w-full bg-white">
-                                <thead className="bg-gray-50">
-                                  <tr>
-                                    <th className="py-2 px-2 sm:px-4 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                      Volunteer ID
-                                    </th>
-                                    <th className="py-2 px-2 sm:px-4 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                      Volunteer
-                                    </th>
-                                    <th className="py-2 px-2 sm:px-4 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                      Applied At
-                                    </th>
-                                    <th className="py-2 px-2 sm:px-4 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                      Actions
-                                    </th>
-                                  </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-200">
-                                  {eventApplications
-                                    .filter((app) => app.status === "pending")
-                                    .map((app) => (
-                                      <tr
-                                        key={app.application_id}
-                                        className="transition-colors hover:bg-gray-50"
-                                      >
-                                        <td className="py-2 px-2 sm:px-4 text-xs sm:text-sm">
-                                          {app.volunteer_id}
-                                        </td>
-                                        <td className="py-2 px-2 sm:px-4 text-xs sm:text-sm">
-                                          {app.volunteer_name}
-                                        </td>
-                                        <td className="py-2 px-2 sm:px-4 text-xs sm:text-sm">
-                                          {app.applied_at
-                                            ? new Date(
-                                                app.applied_at
-                                              ).toLocaleDateString()
-                                            : "N/A"}
-                                        </td>
-                                        <td className="py-2 px-2 sm:px-4 text-xs sm:text-sm whitespace-nowrap">
-                                          <button
-                                            onClick={() =>
-                                              handleViewVolunteerProfile(
-                                                app.volunteer_id
-                                              )
-                                            }
-                                            className="bg-gray-100 text-gray-700 px-2 py-1 rounded-md mr-1 sm:mr-2 text-xs hover:bg-gray-200 transition-colors"
-                                          >
-                                            View Profile
-                                          </button>
-                                          <button
-                                            onClick={() =>
-                                              handleUpdateApplicationStatus(
-                                                selectedEvent.event_id,
-                                                app.application_id,
-                                                "approved"
-                                              )
-                                            }
-                                            className="bg-green-100 text-green-700 px-2 py-1 rounded-md mr-1 sm:mr-2 text-xs hover:bg-green-200 transition-colors"
-                                          >
-                                            Approve
-                                          </button>
-                                          <button
-                                            onClick={() =>
-                                              handleUpdateApplicationStatus(
-                                                selectedEvent.event_id,
-                                                app.application_id,
-                                                "rejected"
-                                              )
-                                            }
-                                            className="bg-red-100 text-red-700 px-2 py-1 rounded-md text-xs hover:bg-red-200 transition-colors"
-                                          >
-                                            Reject
-                                          </button>
-                                        </td>
-                                      </tr>
-                                    ))}
-                                </tbody>
-                              </table>
-                            </div>
-                          )}
-                        </div>
-                        {/* Approved Applications */}
-                        <div className="mb-6">
-                          <h5 className="text-sm font-medium mb-2">
-                            Approved Volunteers
-                          </h5>
-                          {eventApplications.filter(
-                            (app) =>
-                              app.status === "approved" ||
-                              app.status === "accepted"
-                          ).length === 0 ? (
-                            <p className="text-gray-500 text-sm">
-                              No approved volunteers yet.
-                            </p>
-                          ) : (
-                            <div className="overflow-x-auto rounded-md border">
-                              <table className="min-w-full bg-white">
-                                <thead className="bg-gray-50">
-                                  <tr>
-                                    <th className="py-2 px-2 sm:px-4 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                      Volunteer ID
-                                    </th>
-                                    <th className="py-2 px-2 sm:px-4 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                      Volunteer
-                                    </th>
-                                    <th className="py-2 px-2 sm:px-4 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                      Applied At
-                                    </th>
-                                    <th className="py-2 px-2 sm:px-4 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                      Actions
-                                    </th>
-                                  </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-200">
-                                  {eventApplications
-                                    .filter(
-                                      (app) =>
-                                        app.status === "approved" ||
-                                        app.status === "accepted"
-                                    )
-                                    .map((app) => (
-                                      <tr
-                                        key={app.application_id}
-                                        className="transition-colors hover:bg-green-50 bg-gray-50"
-                                      >
-                                        <td className="py-2 px-2 sm:px-4 text-xs sm:text-sm">
-                                          {app.volunteer_id}
-                                        </td>
-                                        <td className="py-2 px-2 sm:px-4 text-xs sm:text-sm">
-                                          {app.volunteer_name}
-                                        </td>
-                                        <td className="py-2 px-2 sm:px-4 text-xs sm:text-sm">
-                                          {app.applied_at
-                                            ? new Date(
-                                                app.applied_at
-                                              ).toLocaleDateString()
-                                            : "N/A"}
-                                        </td>
-                                        <td className="py-2 px-2 sm:px-4 text-xs sm:text-sm whitespace-nowrap">
-                                          <button
-                                            onClick={() =>
-                                              handleViewVolunteerProfile(
-                                                app.volunteer_id
-                                              )
-                                            }
-                                            className="bg-gray-100 text-gray-700 px-2 py-1 rounded-md mr-1 sm:mr-2 text-xs hover:bg-gray-200 transition-colors"
-                                          >
-                                            View Profile
-                                          </button>
-                                          <button
-                                            onClick={() => {
-                                              setSelectedVolunteer({
-                                                volunteer_id: app.volunteer_id,
-                                                name:
-                                                  app.volunteer_name ||
-                                                  `Volunteer #${app.volunteer_id}`,
-                                              });
-                                              // Fetch any existing feedback before showing the modal
-                                              fetchVolunteerFeedback(
-                                                selectedEvent.event_id,
-                                                app.volunteer_id
-                                              );
-                                              setShowFeedbackModal(true);
-                                            }}
-                                            className="bg-blue-100 text-blue-700 px-2 py-1 rounded-md text-xs hover:bg-blue-200 transition-colors mr-2"
-                                          >
-                                            Feedback
-                                          </button>
-                                          <button
-                                            onClick={() =>
-                                              handleUpdateApplicationStatus(
-                                                selectedEvent.event_id,
-                                                app.application_id,
-                                                "rejected"
-                                              )
-                                            }
-                                            className="bg-red-100 text-red-700 px-2 py-1 rounded-md text-xs hover:bg-red-200 transition-colors"
-                                          >
-                                            Reject
-                                          </button>
-                                        </td>
-                                      </tr>
-                                    ))}
-                                </tbody>
-                              </table>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Volunteer Profile Modal (properly moved outside table structure) */}
-                        {showProfileModal && (
-                          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-                            <div className="bg-white rounded-lg shadow-lg w-full max-w-md mx-auto my-8 overflow-hidden">
-                              <div className="flex justify-between items-center p-4 sm:p-6 border-b sticky top-0 bg-white z-10">
-                                <h3 className="text-lg font-bold truncate">
-                                  Volunteer Profile
-                                </h3>
-                                <button
-                                  onClick={() => setShowProfileModal(false)}
-                                  className="text-gray-500 hover:text-gray-700 text-xl"
-                                >
-                                  &times;
-                                </button>
-                              </div>
-                              <div className="p-4 sm:p-6">
-                                {isLoadingProfile ? (
-                                  <div className="text-center py-8">
-                                    Loading...
-                                  </div>
-                                ) : (
-                                  <>
-                                    {volunteerProfile &&
-                                    !volunteerProfile.error ? (
-                                      <div>
-                                        <div className="flex flex-col items-center mb-4">
-                                          {volunteerProfile.profile_photo ? (
-                                            <img
-                                              src={
-                                                volunteerProfile.profile_photo.startsWith(
-                                                  "http"
-                                                )
-                                                  ? volunteerProfile.profile_photo
-                                                  : `http://localhost:9000${volunteerProfile.profile_photo}`
-                                              }
-                                              alt="Profile"
-                                              className="w-28 h-28 rounded-full object-cover mb-3 border-4 border-primary shadow-lg"
-                                            />
-                                          ) : (
-                                            <div className="w-28 h-28 rounded-full bg-gray-200 flex items-center justify-center mb-3 text-gray-400 border-4 border-primary shadow-lg">
-                                              <span className="text-3xl">
-                                                ?
-                                              </span>
-                                            </div>
-                                          )}
-                                          <div className="font-bold text-xl text-gray-900 mb-1">
-                                            {volunteerProfile.name ||
-                                              "No Name Provided"}
-                                          </div>
-                                        </div>
-                                        {volunteerProfile.bio && (
-                                          <div className="mb-4 text-center text-base text-gray-700 px-2">
-                                            <span className="font-semibold text-primary">
-                                              Bio:
-                                            </span>{" "}
-                                            {volunteerProfile.bio}
-                                          </div>
-                                        )}
-                                        {volunteerProfile.skills && (
-                                          <div className="mb-2 text-center">
-                                            <span className="font-semibold text-primary">
-                                              Skills:
-                                            </span>
-                                            <div className="flex flex-wrap justify-center gap-2 mt-2">
-                                              {volunteerProfile.skills
-                                                .split(",")
-                                                .map((skill, idx) => (
-                                                  <span
-                                                    key={idx}
-                                                    className="inline-block bg-primary/10 text-primary font-medium px-3 py-1 rounded-full text-sm shadow-sm border border-primary/20"
-                                                  >
-                                                    {skill.trim()}
-                                                  </span>
-                                                ))}
-                                            </div>
-                                          </div>
-                                        )}
-                                        {/* Removed raw profile data display as requested */}
-                                      </div>
-                                    ) : (
-                                      <div className="text-center text-red-500 py-8">
-                                        {volunteerProfile?.error ||
-                                          "Profile not found."}
-                                      </div>
-                                    )}
-                                  </>
-                                )}
-                              </div>
-                            </div>
+                      <div className="mb-6">
+                        <h5 className="text-sm font-medium mb-2">Pending Applications</h5>
+                        {eventApplications.filter(app => app.status === 'pending').length === 0 ? (
+                          <p className="text-gray-500 text-sm">No pending applications.</p>
+                        ) : (
+                          <div className="overflow-x-auto rounded-md border">
+                            <table className="min-w-full bg-white">
+                              <thead className="bg-gray-50">
+                                <tr>
+                                  <th className="py-2 px-2 sm:px-4 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Volunteer ID</th>
+                                  <th className="py-2 px-2 sm:px-4 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Volunteer</th>
+                                  <th className="py-2 px-2 sm:px-4 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Applied At</th>
+                                  <th className="py-2 px-2 sm:px-4 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-gray-200">
+                                {eventApplications
+                                  .filter(app => app.status === 'pending')
+                                  .map(app => (
+                                    <tr key={app.application_id} className="transition-colors hover:bg-gray-50">
+                                      <td className="py-2 px-2 sm:px-4 text-xs sm:text-sm">{app.volunteer_id}</td>
+                                      <td className="py-2 px-2 sm:px-4 text-xs sm:text-sm">{app.volunteer_name}</td>
+                                      <td className="py-2 px-2 sm:px-4 text-xs sm:text-sm">{app.applied_at ? new Date(app.applied_at).toLocaleDateString() : 'N/A'}</td>
+                                      <td className="py-2 px-2 sm:px-4 text-xs sm:text-sm whitespace-nowrap">
+                                        <button
+                                          onClick={() => handleViewVolunteerProfile(app.volunteer_id)}
+                                          className="bg-gray-100 text-gray-700 px-2 py-1 rounded-md mr-1 sm:mr-2 text-xs hover:bg-gray-200 transition-colors"
+                                        >
+                                          View Profile
+                                        </button>
+                                        <button
+                                          onClick={() => handleUpdateApplicationStatus(selectedEvent.event_id, app.application_id, 'approved')}
+                                          className="bg-green-100 text-green-700 px-2 py-1 rounded-md mr-1 sm:mr-2 text-xs hover:bg-green-200 transition-colors"
+                                        >
+                                          Approve
+                                        </button>
+                                        <button
+                                          onClick={() => handleUpdateApplicationStatus(selectedEvent.event_id, app.application_id, 'rejected')}
+                                          className="bg-red-100 text-red-700 px-2 py-1 rounded-md text-xs hover:bg-red-200 transition-colors"
+                                        >
+                                          Reject
+                                        </button>
+                                      </td>
+                                    </tr>
+                                  ))}
+                              </tbody>
+                            </table>
                           </div>
                         )}
-
-                        {/* Rejected Applications */}
-                        <div>
-                          <h5 className="text-sm font-medium mb-2">
-                            Rejected Applications
-                          </h5>
-                          {eventApplications.filter(
-                            (app) => app.status === "rejected"
-                          ).length === 0 ? (
-                            <p className="text-gray-500 text-sm">
-                              No rejected applications.
-                            </p>
-                          ) : (
-                            <div className="overflow-x-auto rounded-md border">
-                              <table className="min-w-full bg-white">
-                                <thead className="bg-gray-50">
-                                  <tr>
-                                    <th className="py-2 px-2 sm:px-4 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                      Volunteer ID
-                                    </th>
-                                    <th className="py-2 px-2 sm:px-4 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                      Volunteer
-                                    </th>
-                                    <th className="py-2 px-2 sm:px-4 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                      Applied At
-                                    </th>
-                                    <th className="py-2 px-2 sm:px-4 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                      Actions
-                                    </th>
-                                  </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-200">
-                                  {eventApplications
-                                    .filter((app) => app.status === "rejected")
-                                    .map((app) => (
-                                      <tr
-                                        key={app.application_id}
-                                        className="transition-colors hover:bg-red-50 bg-gray-50"
-                                      >
-                                        <td className="py-2 px-2 sm:px-4 text-xs sm:text-sm">
-                                          {app.volunteer_id}
-                                        </td>
-                                        <td className="py-2 px-2 sm:px-4 text-xs sm:text-sm">
-                                          {app.volunteer_name}
-                                        </td>
-                                        <td className="py-2 px-2 sm:px-4 text-xs sm:text-sm">
-                                          {app.applied_at
-                                            ? new Date(
-                                                app.applied_at
-                                              ).toLocaleDateString()
-                                            : "N/A"}
-                                        </td>
-                                        <td className="py-2 px-2 sm:px-4 text-xs sm:text-sm whitespace-nowrap">
-                                          <button
-                                            onClick={() =>
-                                              handleUpdateApplicationStatus(
-                                                selectedEvent.event_id,
-                                                app.application_id,
-                                                "approved"
-                                              )
+                      </div>
+                                            {/* Approved Applications */}
+                      <div className="mb-6">
+                        <h5 className="text-sm font-medium mb-2">Approved Volunteers</h5>
+                        {eventApplications.filter(app => app.status === 'approved' || app.status === 'accepted').length === 0 ? (
+                          <p className="text-gray-500 text-sm">No approved volunteers yet.</p>
+                        ) : (
+                          <div className="overflow-x-auto rounded-md border">
+                            <table className="min-w-full bg-white">
+                              <thead className="bg-gray-50">
+                                <tr>
+                                  <th className="py-2 px-2 sm:px-4 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Volunteer ID</th>
+                                  <th className="py-2 px-2 sm:px-4 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Volunteer</th>
+                                  <th className="py-2 px-2 sm:px-4 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Applied At</th>
+                                  <th className="py-2 px-2 sm:px-4 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-gray-200">
+                                {eventApplications
+                                  .filter(app => app.status === 'approved' || app.status === 'accepted')
+                                  .map(app => (
+                                    <tr key={app.application_id} className="transition-colors hover:bg-green-50 bg-gray-50">
+                                      <td className="py-2 px-2 sm:px-4 text-xs sm:text-sm">{app.volunteer_id}</td>
+                                      <td className="py-2 px-2 sm:px-4 text-xs sm:text-sm">{app.volunteer_name}</td>
+                                      <td className="py-2 px-2 sm:px-4 text-xs sm:text-sm">{app.applied_at ? new Date(app.applied_at).toLocaleDateString() : 'N/A'}</td>
+                                      <td className="py-2 px-2 sm:px-4 text-xs sm:text-sm whitespace-nowrap">
+                                        <button
+                                          onClick={() => handleViewVolunteerProfile(app.volunteer_id)}
+                                          className="bg-gray-100 text-gray-700 px-2 py-1 rounded-md mr-1 sm:mr-2 text-xs hover:bg-gray-200 transition-colors"
+                                        >
+                                          View Profile
+                                        </button>
+                                        <button
+                                          onClick={() => {
+                                            console.log('Chat button clicked for volunteer:', app.volunteer_id, app.volunteer_name);
+                                            if (!app.volunteer_id || app.volunteer_id === null) {
+                                              console.error('Invalid volunteer_id:', app.volunteer_id);
+                                              return;
                                             }
-                                            className="bg-green-100 text-green-700 px-2 py-1 rounded-md text-xs hover:bg-green-200 transition-colors"
-                                          >
-                                            Approve
-                                          </button>
-                                        </td>
-                                      </tr>
-                                    ))}
-                                </tbody>
-                              </table>
-                            </div>
-                          )}
-                        </div>
-                      </>
-                    )}
-                  </div>
+                                            openChatModal({ volunteer_id: app.volunteer_id, name: app.volunteer_name });
+                                          }}
+                                          className="bg-blue-100 text-blue-700 px-2 py-1 rounded-md mr-1 sm:mr-2 text-xs hover:bg-blue-200 transition-colors flex items-center"
+                                        >
+                                          <FiMessageCircle className="mr-1" size={12} />
+                                          View Messages
+                                        </button>
+                                        <button
+                                          onClick={() => {
+                                            setSelectedVolunteer({
+                                              volunteer_id: app.volunteer_id,
+                                              name: app.volunteer_name || `Volunteer #${app.volunteer_id}`
+                                            });
+                                            // Fetch any existing feedback before showing the modal
+                                            fetchVolunteerFeedback(selectedEvent.event_id, app.volunteer_id);
+                                            setShowFeedbackModal(true);
+                                          }}
+                                          className="bg-blue-100 text-blue-700 px-2 py-1 rounded-md text-xs hover:bg-blue-200 transition-colors mr-2"
+                                        >
+                                          Feedback
+                                        </button>
+                                        <button
+                                          onClick={() => handleUpdateApplicationStatus(selectedEvent.event_id, app.application_id, 'rejected')}
+                                          className="bg-red-100 text-red-700 px-2 py-1 rounded-md text-xs hover:bg-red-200 transition-colors"
+                                        >
+                                          Reject
+                                        </button>
+                                      </td>
+                                    </tr>
+                                  ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </div>
+
+{/* Volunteer Profile Modal (properly moved outside table structure) */}
+{showProfileModal && (
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+    <div className="bg-white rounded-lg shadow-lg w-full max-w-md mx-auto my-8 overflow-hidden">
+      <div className="flex justify-between items-center p-4 sm:p-6 border-b sticky top-0 bg-white z-10">
+        <h3 className="text-lg font-bold truncate">Volunteer Profile</h3>
+        <button 
+          onClick={() => setShowProfileModal(false)} 
+          className="text-gray-500 hover:text-gray-700 text-xl"
+        >
+          &times;
+        </button>
+      </div>
+      <div className="p-4 sm:p-6">
+        {isLoadingProfile ? (
+          <div className="text-center py-8">Loading...</div>
+        ) : (
+          <>
+            {volunteerProfile && !volunteerProfile.error ? (
+              <div>
+                <div className="flex flex-col items-center mb-4">
+                  {volunteerProfile.profile_photo ? (
+                    <img 
+                      src={
+                        volunteerProfile.profile_photo.startsWith('http')
+                          ? volunteerProfile.profile_photo
+                          : `http://localhost:9000${volunteerProfile.profile_photo}`
+                      }
+                      alt="Profile" 
+                      className="w-28 h-28 rounded-full object-cover mb-3 border-4 border-primary shadow-lg" 
+                    />
+                  ) : (
+                    <div className="w-28 h-28 rounded-full bg-gray-200 flex items-center justify-center mb-3 text-gray-400 border-4 border-primary shadow-lg">
+                      <span className="text-3xl">?</span>
+                    </div>
+                  )}
+                  <div className="font-bold text-xl text-gray-900 mb-1">{volunteerProfile.name || 'No Name Provided'}</div>
                 </div>
-              </div>
-            </div>
-          )}
-
-          {/* Feedback Modal */}
-          {showFeedbackModal && selectedVolunteer && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-              <div className="bg-white rounded-lg shadow-lg w-full max-w-md mx-auto my-8 overflow-hidden">
-                <div className="flex justify-between items-center p-4 sm:p-6 border-b sticky top-0 bg-white z-10">
-                  <h3 className="text-lg font-bold truncate">
-                    {isEditingFeedback
-                      ? `Edit Feedback for ${selectedVolunteer.name}`
-                      : selectedVolunteer.name
-                      ? `Provide Feedback for ${selectedVolunteer.name}`
-                      : "Provide Feedback"}
-                  </h3>
-                  <button
-                    onClick={() => setShowFeedbackModal(false)}
-                    className="text-gray-500 hover:text-gray-700 text-xl ml-4"
-                  >
-                    &times;
-                  </button>
-                </div>
-
-                {isFetchingFeedback ? (
-                  <div className="p-4 sm:p-6 flex justify-center items-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                {volunteerProfile.bio && (
+                  <div className="mb-4 text-center text-base text-gray-700 px-2">
+                    <span className="font-semibold text-primary">Bio:</span> {volunteerProfile.bio}
                   </div>
-                ) : (
-                  <form onSubmit={handleSubmitFeedback} className="p-4 sm:p-6">
-                    <div className="mb-4">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Rating (1-5)
-                      </label>
-                      <select
-                        value={feedbackForm.rating}
-                        onChange={(e) =>
-                          setFeedbackForm({
-                            ...feedbackForm,
-                            rating: e.target.value,
-                          })
-                        }
-                        className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring focus:ring-primary/50"
-                      >
-                        <option value="1">1 - Poor</option>
-                        <option value="2">2 - Fair</option>
-                        <option value="3">3 - Good</option>
-                        <option value="4">4 - Very Good</option>
-                        <option value="5">5 - Excellent</option>
-                      </select>
-                    </div>
-
-                    <div className="mb-4">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Hours Worked
-                      </label>
-                      <input
-                        type="number"
-                        required
-                        min="1"
-                        value={feedbackForm.hours_worked}
-                        onChange={(e) =>
-                          setFeedbackForm({
-                            ...feedbackForm,
-                            hours_worked: e.target.value,
-                          })
-                        }
-                        className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring focus:ring-primary/50"
-                      />
-                    </div>
-
-                    <div className="mb-6">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Comment
-                      </label>
-                      <textarea
-                        required
-                        value={feedbackForm.comment}
-                        onChange={(e) =>
-                          setFeedbackForm({
-                            ...feedbackForm,
-                            comment: e.target.value,
-                          })
-                        }
-                        className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring focus:ring-primary/50"
-                        rows="3"
-                        placeholder="Provide feedback on volunteer's performance..."
-                      />
-                    </div>
-
-                    <div className="flex justify-end">
-                      <motion.button
-                        type="button"
-                        onClick={() => setShowFeedbackModal(false)}
-                        className="bg-gray-200 text-gray-700 py-2 px-4 rounded-md mr-2 hover:bg-gray-300 transition-colors"
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        disabled={isSubmittingFeedback}
-                      >
-                        Cancel
-                      </motion.button>
-                      <motion.button
-                        type="submit"
-                        className="bg-primary text-white py-2 px-4 rounded-md hover:bg-primary/90 transition-colors flex items-center min-w-[150px] justify-center"
-                        whileHover={
-                          !isSubmittingFeedback ? { scale: 1.02 } : {}
-                        }
-                        whileTap={!isSubmittingFeedback ? { scale: 0.98 } : {}}
-                        disabled={isSubmittingFeedback}
-                      >
-                        <AnimatePresence mode="wait">
-                          {isSubmittingFeedback ? (
-                            <SavingSpinner
-                              key="submitting"
-                              message="Submitting..."
-                              size="small"
-                            />
-                          ) : (
-                            <motion.span
-                              key="submit"
-                              initial={{ opacity: 0 }}
-                              animate={{ opacity: 1 }}
-                              exit={{ opacity: 0 }}
-                              transition={{ duration: 0.15 }}
-                            >
-                              {isEditingFeedback
-                                ? "Update Feedback"
-                                : "Submit Feedback"}
-                            </motion.span>
-                          )}
-                        </AnimatePresence>
-                      </motion.button>
-                    </div>
-                  </form>
                 )}
+                {volunteerProfile.skills && (
+                  <div className="mb-2 text-center">
+                    <span className="font-semibold text-primary">Skills:</span>
+                    <div className="flex flex-wrap justify-center gap-2 mt-2">
+                      {volunteerProfile.skills.split(',').map((skill, idx) => (
+                        <span key={idx} className="inline-block bg-primary/10 text-primary font-medium px-3 py-1 rounded-full text-sm shadow-sm border border-primary/20">
+                          {skill.trim()}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {/* Removed raw profile data display as requested */}
+              </div>
+            ) : (
+              <div className="text-center text-red-500 py-8">
+                {volunteerProfile?.error || 'Profile not found.'}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  </div>
+)}
+                     
+                      
+                      {/* Rejected Applications */}
+                      <div>
+                        <h5 className="text-sm font-medium mb-2">Rejected Applications</h5>
+                        {eventApplications.filter(app => app.status === 'rejected').length === 0 ? (
+                          <p className="text-gray-500 text-sm">No rejected applications.</p>
+                        ) : (
+                          <div className="overflow-x-auto rounded-md border">
+                            <table className="min-w-full bg-white">
+                              <thead className="bg-gray-50">
+                                <tr>
+                                  <th className="py-2 px-2 sm:px-4 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Volunteer ID</th>
+                                  <th className="py-2 px-2 sm:px-4 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Volunteer</th>
+                                  <th className="py-2 px-2 sm:px-4 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Applied At</th>
+                                  <th className="py-2 px-2 sm:px-4 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-gray-200">
+                                {eventApplications
+                                  .filter(app => app.status === 'rejected')
+                                  .map(app => (
+                                    <tr key={app.application_id} className="transition-colors hover:bg-red-50 bg-gray-50">
+                                      <td className="py-2 px-2 sm:px-4 text-xs sm:text-sm">{app.volunteer_id}</td>
+                                      <td className="py-2 px-2 sm:px-4 text-xs sm:text-sm">{app.volunteer_name}</td>
+                                      <td className="py-2 px-2 sm:px-4 text-xs sm:text-sm">{app.applied_at ? new Date(app.applied_at).toLocaleDateString() : 'N/A'}</td>
+                                      <td className="py-2 px-2 sm:px-4 text-xs sm:text-sm whitespace-nowrap">
+                                        <button
+                                          onClick={() => handleUpdateApplicationStatus(selectedEvent.event_id, app.application_id, 'approved')}
+                                          className="bg-green-100 text-green-700 px-2 py-1 rounded-md text-xs hover:bg-green-200 transition-colors"
+                                        >
+                                          Approve
+                                        </button>
+                                      </td>
+                                    </tr>
+                                  ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
-          )}
+          </div>
+        )}
+        
+        {/* Feedback Modal */}
+        {showFeedbackModal && selectedVolunteer && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+            <div className="bg-white rounded-lg shadow-lg w-full max-w-md mx-auto my-8 overflow-hidden">
+              <div className="flex justify-between items-center p-4 sm:p-6 border-b sticky top-0 bg-white z-10">
+                <h3 className="text-lg font-bold truncate">
+                  {isEditingFeedback 
+                    ? `Edit Feedback for ${selectedVolunteer.name}` 
+                    : selectedVolunteer.name 
+                      ? `Provide Feedback for ${selectedVolunteer.name}` 
+                      : "Provide Feedback"}
+                </h3>
+                <button 
+                  onClick={() => setShowFeedbackModal(false)}
+                  className="text-gray-500 hover:text-gray-700 text-xl ml-4"
+                >
+                  &times;
+                </button>
+              </div>
+              
+              {isFetchingFeedback ? (
+                <div className="p-4 sm:p-6 flex justify-center items-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                </div>
+              ) : (
+                <form onSubmit={handleSubmitFeedback} className="p-4 sm:p-6">
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Rating (1-5)
+                  </label>
+                  <select 
+                    value={feedbackForm.rating}
+                    onChange={e => setFeedbackForm({...feedbackForm, rating: e.target.value})}
+                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring focus:ring-primary/50"
+                  >
+                    <option value="1">1 - Poor</option>
+                    <option value="2">2 - Fair</option>
+                    <option value="3">3 - Good</option>
+                    <option value="4">4 - Very Good</option>
+                    <option value="5">5 - Excellent</option>
+                  </select>
+                </div>
+                
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Hours Worked
+                  </label>
+                  <input 
+                    type="number"
+                    required
+                    min="1"
+                    value={feedbackForm.hours_worked}
+                    onChange={e => setFeedbackForm({...feedbackForm, hours_worked: e.target.value})}
+                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring focus:ring-primary/50"
+                  />
+                </div>
+                
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Comment
+                  </label>
+                  <textarea 
+                    required
+                    value={feedbackForm.comment}
+                    onChange={e => setFeedbackForm({...feedbackForm, comment: e.target.value})}
+                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring focus:ring-primary/50"
+                    rows="3"
+                    placeholder="Provide feedback on volunteer's performance..."
+                  />
+                </div>
+                
+                <div className="flex justify-end">
+                  <motion.button 
+                    type="button"
+                    onClick={() => setShowFeedbackModal(false)}
+                    className="bg-gray-200 text-gray-700 py-2 px-4 rounded-md mr-2 hover:bg-gray-300 transition-colors"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    disabled={isSubmittingFeedback}
+                  >
+                    Cancel
+                  </motion.button>
+                  <motion.button 
+                    type="submit"
+                    className="bg-primary text-white py-2 px-4 rounded-md hover:bg-primary/90 transition-colors flex items-center min-w-[150px] justify-center"
+                    whileHover={!isSubmittingFeedback ? { scale: 1.02 } : {}}
+                    whileTap={!isSubmittingFeedback ? { scale: 0.98 } : {}}
+                    disabled={isSubmittingFeedback}
+                  >
+                    <AnimatePresence mode="wait">
+                      {isSubmittingFeedback ? (
+                        <SavingSpinner key="submitting" message="Submitting..." size="small" />
+                      ) : (
+                        <motion.span
+                          key="submit"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 0.15 }}
+                        >
+                          {isEditingFeedback ? 'Update Feedback' : 'Submit Feedback'}
+                        </motion.span>
+                      )}
+                    </AnimatePresence>
+                  </motion.button>
+                </div>
+              </form>
+              )}
+            </div>
+          </div>
+        )}
+        {/* Chat Modal */}
+        <ChatModal 
+          isOpen={showChatModal}
+          onClose={() => setShowChatModal(false)}
+          eventId={selectedEvent?.event_id}
+          eventTitle={selectedEvent?.title}
+          volunteerId={chatVolunteer?.volunteer_id}
+          volunteerName={chatVolunteer?.name}
+        />
         </div>
       </OrganizationSidebar>
     </div>

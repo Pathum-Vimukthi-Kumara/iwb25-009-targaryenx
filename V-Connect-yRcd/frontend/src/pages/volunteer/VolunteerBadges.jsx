@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { FiAward, FiCalendar, FiUser } from 'react-icons/fi'
 import DashboardLayout from './DashboardLayout';
+import LoadingSpinner from '../../components/LoadingSpinner';
 
 const VolunteerBadges = () => {
   const [badges, setBadges] = useState([])
@@ -70,10 +71,7 @@ const VolunteerBadges = () => {
       </div>
 
       {isLoading ? (
-        <div className="text-center py-12">
-          <div className="inline-block w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-          <p className="mt-2 text-gray-600">Loading badges...</p>
-        </div>
+        <LoadingSpinner />
       ) : (
         <>
           {/* Badge Stats */}

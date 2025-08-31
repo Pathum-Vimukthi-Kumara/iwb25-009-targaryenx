@@ -33,18 +33,21 @@ const OrganizationSidebar = ({ children }) => {
     setShowLogoutModal(true);
   };
   
-  // Handle logout
+  // Handle logout with animation
   const handleLogout = () => {
-    // Clear all auth related items from localStorage
-    localStorage.removeItem('token');
-    localStorage.removeItem('user_id');
-    localStorage.removeItem('user_type');
-    
-    // Close the modal
-    setShowLogoutModal(false);
-    
-    // Navigate to login page
-    navigate('/login');
+    // Add a small delay to show the button press animation
+    setTimeout(() => {
+      // Clear all auth related items from localStorage
+      localStorage.removeItem('token');
+      localStorage.removeItem('user_id');
+      localStorage.removeItem('user_type');
+      
+      // Close the modal
+      setShowLogoutModal(false);
+      
+      // Navigate to login page
+      navigate('/login');
+    }, 150);
   };
   
   // Menu items
@@ -75,10 +78,10 @@ const OrganizationSidebar = ({ children }) => {
   
   // Animation variants
   const sidebarVariants = {
-    open: { width: 280, transition: { duration: 0.3 } },
-    closed: { width: 80, transition: { duration: 0.3 } },
-    mobileOpen: { x: 0, transition: { duration: 0.3 } },
-    mobileClosed: { x: '-100%', transition: { duration: 0.3 } }
+    open: { width: 280, transition: { duration: 0.3, ease: "easeInOut" } },
+    closed: { width: 80, transition: { duration: 0.3, ease: "easeInOut" } },
+    mobileOpen: { x: 0, transition: { duration: 0.3, ease: "easeInOut" } },
+    mobileClosed: { x: '-100%', transition: { duration: 0.3, ease: "easeInOut" } }
   };
   
   const contentVariants = {
@@ -110,7 +113,9 @@ const OrganizationSidebar = ({ children }) => {
           <div className="p-4 border-b border-gray-200">
             <div className="flex items-center space-x-2">
               <span className="font-bold text-2xl">
-                <span className="text-primary">V</span>
+                <span className="text-primary cursor-pointer inline-block hover:brightness-150 hover:drop-shadow-[0_0_8px_rgba(59,130,246,0.6)] transition-all duration-300">
+                  V
+                </span>
                 <span className="text-dark">-Connect</span>
               </span>
             </div>
@@ -167,7 +172,12 @@ const OrganizationSidebar = ({ children }) => {
           <div className="pt-8 pb-6 px-8 border-b border-gray-200">
             <div className="flex items-center space-x-2">
               <span className="font-bold text-3xl">
-                <span className="text-primary">V</span>
+                <span 
+                  className="text-primary cursor-pointer inline-block hover:brightness-150 hover:drop-shadow-[0_0_8px_rgba(59,130,246,0.6)] transition-all duration-300" 
+                  onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                >
+                  V
+                </span>
                 <span className={`text-dark ${!isSidebarOpen ? 'hidden' : 'inline'}`}>-Connect</span>
               </span>
             </div>
@@ -212,25 +222,11 @@ const OrganizationSidebar = ({ children }) => {
             </button>
           </div>
           
-          <div className="p-4 border-t border-gray-200">
-            <button
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="flex items-center justify-center w-full p-2 rounded-md bg-gray-100 hover:bg-gray-200 transition-colors"
-              aria-label={isSidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
-            >
-              {isSidebarOpen ? (
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="15 18 9 12 15 6"></polyline>
-                </svg>
-              ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="9 18 15 12 9 6"></polyline>
-                </svg>
-              )}
-            </button>
-          </div>
+
         </div>
       </motion.div>
+      
+
       
       {/* Main Content */}
       <motion.main 
@@ -255,16 +251,16 @@ const OrganizationSidebar = ({ children }) => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
+              transition={{ duration: 0.15, ease: "easeOut" }}
               className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
               onClick={() => setShowLogoutModal(false)}
             >
               {/* Modal Content */}
               <motion.div
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.9, opacity: 0 }}
-                transition={{ type: "spring", damping: 20 }}
+                initial={{ scale: 0.8, opacity: 0, y: 20 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.8, opacity: 0, y: 20 }}
+                transition={{ type: "spring", stiffness: 300, damping: 25, duration: 0.3 }}
                 className="bg-white rounded-lg shadow-lg max-w-md w-full mx-auto p-6"
                 onClick={(e) => e.stopPropagation()}
               >
@@ -280,18 +276,22 @@ const OrganizationSidebar = ({ children }) => {
                 </p>
                 
                 <div className="flex justify-end space-x-3">
-                  <button
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
                     className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-300 transition-colors"
                     onClick={() => setShowLogoutModal(false)}
                   >
                     Cancel
-                  </button>
-                  <button
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
                     className="px-4 py-2 text-sm font-medium text-white bg-red-500 rounded-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300 transition-colors"
                     onClick={handleLogout}
                   >
                     Logout
-                  </button>
+                  </motion.button>
                 </div>
               </motion.div>
             </motion.div>

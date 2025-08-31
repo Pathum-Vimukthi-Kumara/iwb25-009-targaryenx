@@ -3,11 +3,11 @@ import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
-import { FiCheckCircle, FiShield, FiUsers, FiHelpCircle, FiUserPlus, FiSearch, FiCalendar, FiEdit, FiCheck, FiBriefcase, FiTrendingUp, FiMonitor, FiClock, FiDownload, FiArrowRight, FiFileText } from 'react-icons/fi'
+import { FiCheckCircle, FiShield, FiUsers, FiHelpCircle, FiUserPlus, FiSearch, FiCalendar, FiCheck, FiBriefcase, FiTrendingUp, FiFileText } from 'react-icons/fi'
 
 const LearnMore = () => {
   const [scrollY, setScrollY] = useState(0)
-  const [activeTab, setActiveTab] = useState('volunteers')
+
   
   useEffect(() => {
     const handleScroll = () => {
@@ -48,94 +48,15 @@ const LearnMore = () => {
     }
   }
   
-  const volunteerWorkflow = [
-    {
-      icon: <FiUserPlus className="text-white text-3xl" />,
-      title: "Sign Up & Profile",
-      description: "Create your volunteer profile, add your skills, interests, and availability to get personalized opportunities.",
-      color: "bg-primary"
-    },
-    {
-      icon: <FiSearch className="text-white text-3xl" />,
-      title: "Browse & Apply",
-      description: "Find volunteering opportunities that match your interests, skills, and schedule, then apply directly.",
-      color: "bg-accent"
-    },
-    {
-      icon: <FiCalendar className="text-white text-3xl" />,
-      title: "Participate & Serve",
-      description: "Attend orientation sessions, complete required training, and fulfill your volunteer commitments.",
-      color: "bg-primary"
-    },
-    {
-      icon: <FiFileText className="text-white text-3xl" />,
-      title: "Track & Verify",
-      description: "Log your hours, get them verified by organizations, and build your volunteer portfolio with impact metrics.",
-      color: "bg-accent"
-    }
-  ]
-  
-  const organizationWorkflow = [
-    {
-      icon: <FiUserPlus className="text-white text-3xl" />,
-      title: "Register & Verify",
-      description: "Register your organization, provide necessary documentation, and get verified by our admin team.",
-      color: "bg-accent"
-    },
-    {
-      icon: <FiEdit className="text-white text-3xl" />,
-      title: "Create Events",
-      description: "Create public or private events, set requirements, and manage volunteer applications all in one place.",
-      color: "bg-primary"
-    },
-    {
-      icon: <FiUsers className="text-white text-3xl" />,
-      title: "Manage Volunteers",
-      description: "Screen applications, approve volunteers, track attendance, and communicate with your volunteer team.",
-      color: "bg-accent"
-    },
-    {
-      icon: <FiCheck className="text-white text-3xl" />,
-      title: "Track & Report",
-      description: "Track volunteer hours, generate reports, and manage your organization's impact metrics effortlessly.",
-      color: "bg-primary"
-    }
-  ]
-  
-  const adminWorkflow = [
-    {
-      icon: <FiMonitor className="text-white text-3xl" />,
-      title: "Platform Management",
-      description: "Monitor and manage platform activity, user accounts, and ensure everything runs smoothly.",
-      color: "bg-primary"
-    },
-    {
-      icon: <FiUserPlus className="text-white text-3xl" />,
-      title: "Organization Verification",
-      description: "Review documentation and verify organizations to ensure legitimacy and build user trust.",
-      color: "bg-accent"
-    },
-    {
-      icon: <FiClock className="text-white text-3xl" />,
-      title: "Event Approval",
-      description: "Review and approve events created by organizations to ensure they meet community standards.",
-      color: "bg-primary"
-    },
-    {
-      icon: <FiDownload className="text-white text-3xl" />,
-      title: "Analytics & Reporting",
-      description: "Generate platform-wide reports, track growth metrics, and provide insights to stakeholders.",
-      color: "bg-accent"
-    }
-  ]
+
 
   return (
     <>
       <Navbar scrollY={scrollY} />
       
-      <main className="pt-20">
+      <main className="pt-16">
         {/* Hero Section */}
-        <section className="bg-primary text-white py-24">
+        <section className="bg-primary text-white py-16">
           <div className="container mx-auto px-6">
             <div className="max-w-4xl mx-auto text-center">
               <motion.h1 
@@ -161,7 +82,7 @@ const LearnMore = () => {
                 transition={{ duration: 0.5, delay: 0.3 }}
               >
                 <a
-                  href="#workflows" 
+                  href="#detailed-features" 
                   className="bg-white text-primary hover:bg-blue-50 py-3 px-8 rounded-md font-medium transition-colors duration-300 inline-block"
                 >
                   Explore Platform Features
@@ -205,227 +126,7 @@ const LearnMore = () => {
           </div>
         </section>
         
-        {/* Detailed Workflow Section */}
-        <section className="py-20 bg-gray-50" id="workflows">
-          <div className="container mx-auto px-6">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: false, amount: 0.3 }}
-              transition={{ duration: 0.4 }}
-              className="mb-12 text-center"
-            >
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">How V-Connect Works</h2>
-              <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-                Our platform is designed to make volunteering and volunteer management simple and effective for everyone involved
-              </p>
-            </motion.div>
 
-            {/* Tabs */}
-            <div className="flex justify-center mb-12">
-              <div className="inline-flex bg-white rounded-full p-1 border shadow-sm">
-                <button
-                  onClick={() => setActiveTab('volunteers')}
-                  className={`px-5 py-2 rounded-full transition-all duration-300 ${
-                    activeTab === 'volunteers' ? 'bg-primary text-white' : 'text-gray-600 hover:bg-gray-100'
-                  }`}
-                >
-                  For Volunteers
-                </button>
-                <button
-                  onClick={() => setActiveTab('organizations')}
-                  className={`px-5 py-2 rounded-full transition-all duration-300 ${
-                    activeTab === 'organizations' ? 'bg-primary text-white' : 'text-gray-600 hover:bg-gray-100'
-                  }`}
-                >
-                  For Organizations
-                </button>
-                <button
-                  onClick={() => setActiveTab('admins')}
-                  className={`px-5 py-2 rounded-full transition-all duration-300 ${
-                    activeTab === 'admins' ? 'bg-primary text-white' : 'text-gray-600 hover:bg-gray-100'
-                  }`}
-                >
-                  For Admins
-                </button>
-              </div>
-            </div>
-
-            {/* Workflow Steps */}
-            <div className="mt-8 relative">
-              {activeTab === 'volunteers' && (
-                <motion.div 
-                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8"
-                  variants={containerVariants}
-                  initial="hidden"
-                  animate="visible"
-                  key="volunteers"
-                >
-                  {volunteerWorkflow.map((step, index) => (
-                    <motion.div
-                      key={index}
-                      className="relative z-10"
-                      variants={itemVariants}
-                    >
-                      <div className="flex flex-col items-center p-6 hover:shadow-md rounded-lg bg-white transition-shadow duration-300">
-                        <div className="relative">
-                          <motion.div 
-                            className={`${step.color} w-16 h-16 rounded-full flex items-center justify-center mb-5 shadow-md`}
-                            whileHover={{ 
-                              scale: 1.08,
-                              rotate: [0, -3, 3, -3, 0],
-                              transition: { 
-                                rotate: { repeat: 0, duration: 0.4 },
-                                scale: { duration: 0.2 }
-                              }
-                            }}
-                          >
-                            {step.icon}
-                          </motion.div>
-                          <motion.div
-                            className="absolute -top-1 -right-1 bg-white rounded-full w-7 h-7 flex items-center justify-center border border-gray-100 font-bold text-accent"
-                            initial={{ opacity: 0, scale: 0 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ delay: 0.3 + index * 0.15, duration: 0.25, type: "spring" }}
-                          >
-                            {index + 1}
-                          </motion.div>
-                        </div>
-                        <h3 className="text-xl font-semibold mb-3 text-center">{step.title}</h3>
-                        <p className="text-gray-600 text-center">{step.description}</p>
-                        
-                        {index < volunteerWorkflow.length - 1 && (
-                          <motion.div 
-                            className="hidden lg:flex absolute -right-4 top-1/2 transform -translate-y-1/2 z-10"
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: 0.5 + index * 0.1, duration: 0.5 }}
-                          >
-                            <FiArrowRight className="text-accent text-2xl" />
-                          </motion.div>
-                        )}
-                      </div>
-                    </motion.div>
-                  ))}
-                </motion.div>
-              )}
-
-              {activeTab === 'organizations' && (
-                <motion.div 
-                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8"
-                  variants={containerVariants}
-                  initial="hidden"
-                  animate="visible"
-                  key="organizations"
-                >
-                  {organizationWorkflow.map((step, index) => (
-                    <motion.div
-                      key={index}
-                      className="relative z-10"
-                      variants={itemVariants}
-                    >
-                      <div className="flex flex-col items-center p-6 hover:shadow-md rounded-lg bg-white transition-shadow duration-300">
-                        <div className="relative">
-                          <motion.div 
-                            className={`${step.color} w-16 h-16 rounded-full flex items-center justify-center mb-5 shadow-md`}
-                            whileHover={{ 
-                              scale: 1.08,
-                              rotate: [0, -3, 3, -3, 0],
-                              transition: { 
-                                rotate: { repeat: 0, duration: 0.4 },
-                                scale: { duration: 0.2 }
-                              }
-                            }}
-                          >
-                            {step.icon}
-                          </motion.div>
-                          <motion.div
-                            className="absolute -top-1 -right-1 bg-white rounded-full w-7 h-7 flex items-center justify-center border border-gray-100 font-bold text-accent"
-                            initial={{ opacity: 0, scale: 0 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ delay: 0.3 + index * 0.15, duration: 0.25, type: "spring" }}
-                          >
-                            {index + 1}
-                          </motion.div>
-                        </div>
-                        <h3 className="text-xl font-semibold mb-3 text-center">{step.title}</h3>
-                        <p className="text-gray-600 text-center">{step.description}</p>
-                        
-                        {index < organizationWorkflow.length - 1 && (
-                          <motion.div 
-                            className="hidden lg:flex absolute -right-4 top-1/2 transform -translate-y-1/2 z-10"
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: 0.5 + index * 0.1, duration: 0.5 }}
-                          >
-                            <FiArrowRight className="text-accent text-2xl" />
-                          </motion.div>
-                        )}
-                      </div>
-                    </motion.div>
-                  ))}
-                </motion.div>
-              )}
-
-              {activeTab === 'admins' && (
-                <motion.div 
-                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8"
-                  variants={containerVariants}
-                  initial="hidden"
-                  animate="visible"
-                  key="admins"
-                >
-                  {adminWorkflow.map((step, index) => (
-                    <motion.div
-                      key={index}
-                      className="relative z-10"
-                      variants={itemVariants}
-                    >
-                      <div className="flex flex-col items-center p-6 hover:shadow-md rounded-lg bg-white transition-shadow duration-300">
-                        <div className="relative">
-                          <motion.div 
-                            className={`${step.color} w-16 h-16 rounded-full flex items-center justify-center mb-5 shadow-md`}
-                            whileHover={{ 
-                              scale: 1.08,
-                              rotate: [0, -3, 3, -3, 0],
-                              transition: { 
-                                rotate: { repeat: 0, duration: 0.4 },
-                                scale: { duration: 0.2 }
-                              }
-                            }}
-                          >
-                            {step.icon}
-                          </motion.div>
-                          <motion.div
-                            className="absolute -top-1 -right-1 bg-white rounded-full w-7 h-7 flex items-center justify-center border border-gray-100 font-bold text-accent"
-                            initial={{ opacity: 0, scale: 0 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ delay: 0.3 + index * 0.15, duration: 0.25, type: "spring" }}
-                          >
-                            {index + 1}
-                          </motion.div>
-                        </div>
-                        <h3 className="text-xl font-semibold mb-3 text-center">{step.title}</h3>
-                        <p className="text-gray-600 text-center">{step.description}</p>
-                        
-                        {index < adminWorkflow.length - 1 && (
-                          <motion.div 
-                            className="hidden lg:flex absolute -right-4 top-1/2 transform -translate-y-1/2 z-10"
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: 0.5 + index * 0.1, duration: 0.5 }}
-                          >
-                            <FiArrowRight className="text-accent text-2xl" />
-                          </motion.div>
-                        )}
-                      </div>
-                    </motion.div>
-                  ))}
-                </motion.div>
-              )}
-            </div>
-          </div>
-        </section>
         
         {/* Key Features */}
         <section className="py-16" id="detailed-features">
@@ -705,20 +406,24 @@ const LearnMore = () => {
             >
               <h3 className="text-2xl font-bold mb-6">Ready to Join Our Community?</h3>
               <div className="flex flex-col sm:flex-row justify-center gap-4">
-                <motion.button
-                  className="bg-primary text-white hover:bg-primary/90 py-3 px-8 rounded-md font-medium transition-colors duration-300"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  Sign Up as Volunteer
-                </motion.button>
-                <motion.button
-                  className="bg-accent text-white hover:bg-accent/90 py-3 px-8 rounded-md font-medium transition-colors duration-300"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  Register Organization
-                </motion.button>
+                <Link to="/login?type=volunteer">
+                  <motion.button
+                    className="bg-primary text-white hover:bg-primary/90 py-3 px-8 rounded-md font-medium transition-colors duration-300"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    Sign Up as Volunteer
+                  </motion.button>
+                </Link>
+                <Link to="/login?type=organization">
+                  <motion.button
+                    className="bg-accent text-white hover:bg-accent/90 py-3 px-8 rounded-md font-medium transition-colors duration-300"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    Register Organization
+                  </motion.button>
+                </Link>
               </div>
             </motion.div>
           </div>
@@ -859,9 +564,11 @@ const LearnMore = () => {
                 viewport={{ once: true }}
                 transition={{ delay: 0.2 }}
               >
-                <button className="bg-white text-primary hover:bg-blue-50 py-3 px-8 rounded-md font-medium transition-colors">
-                  Sign Up Now
-                </button>
+                <Link to="/login">
+                  <button className="bg-white text-primary hover:bg-blue-50 py-3 px-8 rounded-md font-medium transition-colors">
+                    Sign Up Now
+                  </button>
+                </Link>
                 <Link to="/" className="border-2 border-white bg-transparent hover:bg-white/10 py-3 px-8 rounded-md font-medium transition-colors">
                   Back to Home
                 </Link>

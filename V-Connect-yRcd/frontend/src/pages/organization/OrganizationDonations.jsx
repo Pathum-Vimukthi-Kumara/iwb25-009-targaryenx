@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiPlus, FiEdit, FiTrash2, FiHeart, FiPhone } from 'react-icons/fi';
+import { FiPlus, FiEdit, FiTrash2, FiHeart, FiAtSign } from 'react-icons/fi';
 import OrganizationSidebar from './OrganizationSidebar';
 import LoadingSpinner from '../../components/LoadingSpinner';
 
@@ -11,6 +11,9 @@ const OrganizationDonations = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [currentDonation, setCurrentDonation] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [selectedDonation, setSelectedDonation] = useState(null);
   const navigate = useNavigate();
   
   // Form state for creating/editing donation requests
@@ -64,6 +67,7 @@ const OrganizationDonations = () => {
   
   const handleCreateDonation = async (e) => {
     e.preventDefault();
+    setIsSaving(true);
     try {
       const token = localStorage.getItem('token');
       const organizationId = localStorage.getItem('user_id');
@@ -100,11 +104,14 @@ const OrganizationDonations = () => {
     } catch (error) {
       console.error('Error creating donation request:', error);
       setError('Failed to create donation request. Please try again.');
+    } finally {
+      setIsSaving(false);
     }
   };
   
   const handleEditDonation = async (e) => {
     e.preventDefault();
+    setIsSaving(true);
     try {
       const token = localStorage.getItem('token');
       
@@ -131,6 +138,8 @@ const OrganizationDonations = () => {
     } catch (error) {
       console.error('Error updating donation request:', error);
       setError('Failed to update donation request. Please try again.');
+    } finally {
+      setIsSaving(false);
     }
   };
   
@@ -218,21 +227,22 @@ const OrganizationDonations = () => {
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                {donationRequests.map((donation, index) => (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {donationRequests.map((donation) => (
                   <div 
                     key={donation.request_id}
-                    className="bg-white rounded-xl shadow-md hover:shadow-lg overflow-hidden h-full flex flex-col transition-all duration-300 hover:-translate-y-1"
+                    className="bg-white rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200 hover:-translate-y-1"
                   >
-                    <div className="bg-red-50 p-3 flex justify-center items-center border-b border-primary/10">
-                      <div className="w-12 h-12 sm:w-14 sm:h-14 bg-red-100 rounded-full flex items-center justify-center">
-                        <FiHeart size={24} className="text-red-500 sm:text-2xl" />
-                      </div>
-                    </div>
-                    <div className="p-3 sm:p-5 flex-grow flex flex-col">
-                      <div className="flex justify-between items-start mb-2">
-                        <h3 className="text-base sm:text-lg font-semibold line-clamp-2">{donation.title}</h3>
-                        <div className="flex space-x-2 ml-2">
+                    <div className="p-6">
+                      <div className="flex justify-between items-center mb-3">
+                        <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                          donation.status === 'active' ? 'bg-green-100 text-green-700' : 
+                          donation.status === 'completed' ? 'bg-blue-100 text-blue-700' : 
+                          'bg-gray-100 text-gray-700'
+                        }`}>
+                          {donation.status.charAt(0).toUpperCase() + donation.status.slice(1)}
+                        </span>
+                        <div className="flex items-center">
                           <button 
                             onClick={() => {
                               setCurrentDonation(donation);
@@ -245,51 +255,68 @@ const OrganizationDonations = () => {
                               });
                               setShowEditModal(true);
                             }}
-                            className="text-blue-600 hover:text-blue-800 p-1"
+                            className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50 transition-colors"
                           >
                             <FiEdit size={16} />
                           </button>
                           <button 
                             onClick={() => handleDeleteDonation(donation.request_id)}
-                            className="text-red-600 hover:text-red-800 p-1"
+                            className="text-red-600 hover:text-red-800 p-1 rounded hover:bg-red-50 transition-colors"
                           >
                             <FiTrash2 size={16} />
                           </button>
                         </div>
                       </div>
                       
-                      <div className="flex items-center text-primary font-medium mb-2 text-sm">
-                        <FiHeart className="mr-2 text-red-500" size={16} />
-                        <span>Target: {formatCurrency(donation.target_amount)}</span>
-                      </div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-3 line-clamp-2">
+                        {donation.title}
+                      </h3>
                       
-                      <p className="text-gray-600 mb-3 line-clamp-3 text-sm">
+                      <p className="text-gray-600 text-sm mb-4 line-clamp-2">
                         {donation.description}
                       </p>
                       
-                      {/* Contact Information - Highlighted */}
-                      <div className="border border-primary/20 p-2 sm:p-3 rounded-lg mb-2 sm:mb-3 hover:shadow-md transition-shadow">
-                        <h4 className="font-medium text-primary mb-1 sm:mb-2 text-xs sm:text-sm">Contact Information:</h4>
-                        <div className="space-y-1.5">
-                          <div className="flex items-start hover:translate-x-1 transition-transform">
-                            <FiPhone className="text-primary mr-2 flex-shrink-0 mt-0.5" size={14} />
-                            <span className="text-xs sm:text-sm font-medium break-words">{donation.contact_info}</span>
+                      <div className="bg-red-50 rounded-lg p-3 mb-4">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium text-gray-600">Target</span>
+                          <span className="text-lg font-bold text-red-600">
+                            {formatCurrency(donation.target_amount)}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      {/* Campaign Details - Highlighted Section */}
+                      <div className="bg-gray-50 rounded-lg p-4 mb-4 border border-gray-200">
+                        <h4 className="text-sm font-semibold text-gray-700 mb-3">Campaign Details</h4>
+                        <div className="space-y-3">
+                          <div>
+                            <p className="text-xs text-gray-500">Organization</p>
+                            <p className="text-sm font-semibold text-gray-800">
+                              {localStorage.getItem('user_name') || 'Your Organization'}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-500">Email</p>
+                            <p className="text-sm font-semibold text-gray-800">
+                              {donation.contact_info}
+                            </p>
                           </div>
                         </div>
                       </div>
                       
-                      <div className="mt-auto flex flex-wrap justify-between text-xs sm:text-sm gap-2">
-                        <span className={`px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          donation.status === 'active' ? 'bg-green-100 text-green-800' : 
-                          donation.status === 'completed' ? 'bg-blue-100 text-blue-800' : 
-                          'bg-gray-100 text-gray-800'
-                        }`}>
-                          {donation.status.charAt(0).toUpperCase() + donation.status.slice(1)}
+                      <div className="flex justify-between items-center pt-4 border-t border-gray-100">
+                        <span className="text-xs text-gray-500">
+                          Created: {formatDate(donation.created_at)}
                         </span>
-                        
-                        <span className="text-xs sm:text-sm text-gray-500 truncate">
-                          {window.innerWidth < 350 ? 'Created:' : 'Created:'} {formatDate(donation.created_at)}
-                        </span>
+                        <button 
+                          onClick={() => {
+                            setSelectedDonation(donation);
+                            setShowViewModal(true);
+                          }}
+                          className="text-primary hover:text-primary/80 text-sm font-medium transition-colors"
+                        >
+                          View More
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -360,16 +387,16 @@ const OrganizationDonations = () => {
                 
                 <div className="mb-4">
                   <label className="flex items-center text-sm font-medium text-gray-700 mb-1">
-                    <FiPhone className="mr-2 text-primary" />
-                    Contact Information
+                    <FiAtSign className="mr-2 text-primary" />
+                    Email Address
                   </label>
                   <input 
-                    type="text"
+                    type="email"
                     required
                     value={donationForm.contact_info}
                     onChange={e => setDonationForm({...donationForm, contact_info: e.target.value})}
                     className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring focus:ring-primary/50"
-                    placeholder="Phone number, email, etc."
+                    placeholder="organization@example.com"
                   />
                 </div>
                 
@@ -398,9 +425,15 @@ const OrganizationDonations = () => {
                   </button>
                   <button 
                     type="submit"
-                    className="bg-primary text-white py-2 px-4 rounded-md hover:bg-primary/90 transition-colors flex items-center"
+                    disabled={isSaving}
+                    className="bg-primary text-white py-2 px-4 rounded-md hover:bg-primary/90 transition-colors flex items-center disabled:opacity-50"
                   >
-                    <FiPlus className="mr-2" /> Create Campaign
+                    {isSaving ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    ) : (
+                      <FiPlus className="mr-2" />
+                    )}
+                    {isSaving ? 'Creating...' : 'Create Campaign'}
                   </button>
                 </div>
               </form>
@@ -466,16 +499,16 @@ const OrganizationDonations = () => {
                 
                 <div className="mb-4">
                   <label className="flex items-center text-sm font-medium text-gray-700 mb-1">
-                    <FiPhone className="mr-2 text-primary" />
-                    Contact Information
+                    <FiAtSign className="mr-2 text-primary" />
+                    Email Address
                   </label>
                   <input 
-                    type="text"
+                    type="email"
                     required
                     value={donationForm.contact_info}
                     onChange={e => setDonationForm({...donationForm, contact_info: e.target.value})}
                     className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring focus:ring-primary/50"
-                    placeholder="Phone number, email, etc."
+                    placeholder="organization@example.com"
                   />
                 </div>
                 
@@ -504,12 +537,48 @@ const OrganizationDonations = () => {
                   </button>
                   <button 
                     type="submit"
-                    className="bg-primary text-white py-2 px-4 rounded-md hover:bg-primary/90 transition-colors flex items-center"
+                    disabled={isSaving}
+                    className="bg-primary text-white py-2 px-4 rounded-md hover:bg-primary/90 transition-colors flex items-center disabled:opacity-50"
                   >
-                    <FiEdit className="mr-2" /> Save Changes
+                    {isSaving ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    ) : (
+                      <FiEdit className="mr-2" />
+                    )}
+                    {isSaving ? 'Saving...' : 'Save Changes'}
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+        
+        {/* View More Modal */}
+        {showViewModal && selectedDonation && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-lg w-full max-w-md mx-auto">
+              <div className="flex justify-between items-center p-4 border-b">
+                <h3 className="text-lg font-semibold">Campaign Description</h3>
+                <button 
+                  onClick={() => setShowViewModal(false)}
+                  className="text-gray-500 hover:text-gray-700 text-xl"
+                >
+                  &times;
+                </button>
+              </div>
+              
+              <div className="p-4">
+                <p className="text-gray-700 leading-relaxed">{selectedDonation.description}</p>
+                
+                <div className="flex justify-end mt-4 pt-4 border-t">
+                  <button 
+                    onClick={() => setShowViewModal(false)}
+                    className="bg-gray-200 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-300 transition-colors"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}

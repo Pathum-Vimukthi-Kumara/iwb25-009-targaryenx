@@ -35,7 +35,6 @@ type User record {
     boolean is_active?;
 };
 
-// Minimal payload for login to avoid requiring user_type/name
 type LoginRequest record {
     string email;
     string password;
@@ -52,23 +51,18 @@ mysql:Client dbClient = check new (host = dbConfig.host, port = dbConfig.port, d
 );
 
 function isValidPassword(string password) returns boolean {
-    // Rule 1: Minimum length
     if password.length() < 8 {
         return false;
     }
-    // Rule 2: At least one uppercase
     if !regex:matches(password, ".*[A-Z].*") {
         return false;
     }
-    // Rule 3: At least one lowercase
     if !regex:matches(password, ".*[a-z].*") {
         return false;
     }
-    // Rule 4: At least one digit
     if !regex:matches(password, ".*[0-9].*") {
         return false;
     }
-    // Rule 5: At least one special character
     if !regex:matches(password, ".*[!@#$%^&*(),.?\":{}|<>].*") {
         return false;
     }

@@ -1,30 +1,12 @@
-# V-Connect Frontend – Backend Integration Guide  
-
-V-Connect is a volunteer management platform that connects **organizations** with **volunteers**.  
-This document provides backend developers with the details needed to build fully compatible API endpoints for the React-based frontend.  
-
----
-
-## 🛠 Tech Stack  
-
-- **Frontend:** React.js, Tailwind CSS, Framer Motion  
-- **Backend (Expected):** RESTful API (any language/framework)  
-- **Data Format:** JSON  
-- **Authentication:** JWT-based system  
-
----
-
-## 📂 Project Structure  
-
-
-
-# V-Connect Platform
+# V-Connect Frontend – Backend Integration Guide
 
 ## Overview
 
 V-Connect is a modern web platform designed to connect volunteers, organizations, and administrators for event management, communication, and collaboration. The backend is built using **Ballerina**, a cloud-native programming language optimized for integration, APIs, and distributed systems.
 
 ---
+
+## 📂 Project Structure  
 
 ## Architecture
 
@@ -63,7 +45,7 @@ V-Connect is a modern web platform designed to connect volunteers, organizations
 - **Ballerina** (RESTful APIs, JWT, SQL, HTTP, MIME, IO, Time)
 
 ### Database
-- **SQL Database** (MySQL, PostgreSQL, or SQLite)
+- **SQL Database** (MySQL)
 
 ---
 
@@ -71,7 +53,7 @@ V-Connect is a modern web platform designed to connect volunteers, organizations
 
 - [Node.js & npm](https://nodejs.org/)
 - [Ballerina](https://ballerina.io/downloads/)
-- SQL database (e.g., MySQL, PostgreSQL, or SQLite)
+- SQL database (MySQL
 
 ---
 
@@ -134,15 +116,9 @@ npm run dev
 Pull requests are welcome! For major changes, please open an issue first to discuss what you would like to change.
 
 ---
-
-## License
-[MIT](LICENSE)
-
----
-
 ## API Documentation
 
 For a complete list of API endpoints and request/response examples, see our interactive Postman documentation:
 
 👉 [V-Connect API Documentation (Postman)](https://documenter.getpostman.com/view/40284138/2sB3BGJAME)
-- **VolunteerProfile.jsx** → `/volunteers/:id` (GET/PUT), badges & skills, profile image upload  
+

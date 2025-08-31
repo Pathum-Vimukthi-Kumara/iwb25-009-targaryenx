@@ -78,7 +78,6 @@ function getAllContactMessages() returns ContactMessage[]|error {
     }
     return messages;
 }
-
 function updateContactMessageStatus(int contactId, string status) returns ContactMessage|error {
     if status != "read" && status != "unread" {
         return error("Invalid status. Must be 'read' or 'unread'");

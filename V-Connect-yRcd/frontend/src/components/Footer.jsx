@@ -7,74 +7,52 @@ const Footer = () => {
   return (
     <footer className="bg-dark text-white pt-16 pb-8">
       <div className="container mx-auto px-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-12">
           {/* Logo and Description */}
-          <div>
-            <div className="flex items-center space-x-2 mb-4">
-              <img src="/vconnect-logo.svg" alt="V-Connect Logo" className="h-8 w-8 filter brightness-0 invert" />
-              <span className="font-bold text-xl">
+          <div className="lg:w-1/2 mb-8 lg:mb-0">
+            <div className="mb-4">
+              <span className="font-bold text-2xl">
                 <span className="text-white">V - Connect</span>
               </span>
             </div>
-            <p className="text-gray-300 mb-4">
+            <h2 className="text-lg font-semibold text-white mb-2">Centralized Platform for Volunteering</h2>
+            <p className="text-gray-300 max-w-md">
               Connecting volunteers with meaningful opportunities to make a difference in their communities.
             </p>
-            <div className="flex space-x-4">
-              <a href="#" className="text-gray-300 hover:text-white transition-colors" aria-label="Facebook">
-                <FiFacebook size={20} />
-              </a>
-              <a href="#" className="text-gray-300 hover:text-white transition-colors" aria-label="Twitter">
-                <FiTwitter size={20} />
-              </a>
-              <a href="#" className="text-gray-300 hover:text-white transition-colors" aria-label="Instagram">
-                <FiInstagram size={20} />
-              </a>
-              <a href="#" className="text-gray-300 hover:text-white transition-colors" aria-label="LinkedIn">
-                <FiLinkedin size={20} />
-              </a>
+          </div>
+
+          {/* Links Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 lg:w-1/2">
+            {/* Quick Links */}
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
+              <ul className="space-y-2">
+                <li><Link to="/" className="text-gray-300 hover:text-white transition-colors">Home</Link></li>
+                <li><Link to="/about" className="text-gray-300 hover:text-white transition-colors">About</Link></li>
+                <li><Link to="/login" className="text-gray-300 hover:text-white transition-colors">Login</Link></li>
+                <li><Link to="/signup" className="text-gray-300 hover:text-white transition-colors">Sign Up</Link></li>
+              </ul>
             </div>
-          </div>
 
-          {/* Quick Links */}
-          <div>
-            <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
-            <ul className="space-y-2">
-              <li><Link to="/" className="text-gray-300 hover:text-white transition-colors">Home</Link></li>
-              <li><Link to="/about" className="text-gray-300 hover:text-white transition-colors">About</Link></li>
-              <li><Link to="/organizations" className="text-gray-300 hover:text-white transition-colors">Organizations</Link></li>
-              <li><Link to="/volunteer-resources" className="text-gray-300 hover:text-white transition-colors">Volunteer Resources</Link></li>
-            </ul>
-          </div>
+            {/* Resources */}
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Resources</h3>
+              <ul className="space-y-2">
+                <li><Link to="/faqs" className="text-gray-300 hover:text-white transition-colors">FAQs</Link></li>
+                <li><Link to="/privacy-policy" className="text-gray-300 hover:text-white transition-colors">Privacy Policy</Link></li>
+                <li><Link to="/terms-of-service" className="text-gray-300 hover:text-white transition-colors">Terms of Service</Link></li>
+                <li><Link to="/contact" className="text-gray-300 hover:text-white transition-colors">Contact Us</Link></li>
+              </ul>
+            </div>
 
-          {/* Resources */}
-          <div>
-            <h3 className="text-lg font-semibold mb-4">Resources</h3>
-            <ul className="space-y-2">
-              <li><Link to="/faqs" className="text-gray-300 hover:text-white transition-colors">FAQs</Link></li>
-              <li><Link to="/blog" className="text-gray-300 hover:text-white transition-colors">Blog</Link></li>
-              <li><Link to="/privacy-policy" className="text-gray-300 hover:text-white transition-colors">Privacy Policy</Link></li>
-              <li><Link to="/terms-of-service" className="text-gray-300 hover:text-white transition-colors">Terms of Service</Link></li>
-              <li><Link to="/contact" className="text-gray-300 hover:text-white transition-colors">Contact Us</Link></li>
-            </ul>
-          </div>
-
-          {/* Newsletter */}
-          <div>
-            <h3 className="text-lg font-semibold mb-4">Stay Updated</h3>
-            <p className="text-gray-300 mb-4">Subscribe to our newsletter for updates on volunteer opportunities.</p>
-            <form className="flex">
-              <input
-                type="email"
-                placeholder="Your email"
-                className="bg-gray-800 text-white px-4 py-2 rounded-l-md focus:outline-none w-full"
-              />
-              <button
-                type="submit"
-                className="bg-primary hover:bg-accent px-4 py-2 rounded-r-md transition-colors duration-300"
-              >
-                Subscribe
-              </button>
-            </form>
+            {/* Account */}
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Account</h3>
+              <ul className="space-y-2">
+                <li><Link to="/login" className="text-gray-300 hover:text-white transition-colors">Login</Link></li>
+                <li><Link to="/signup" className="text-gray-300 hover:text-white transition-colors">Sign Up</Link></li>
+              </ul>
+            </div>
           </div>
         </div>
 

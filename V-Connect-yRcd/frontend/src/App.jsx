@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { WebSocketProvider } from './contexts/WebSocketContext'
 import Navbar from './components/Navbar'
 import Hero from './sections/Hero'
 import About from './sections/About'
@@ -12,14 +13,11 @@ import Footer from './components/Footer'
 // Import Page Components
 import AboutPage from './pages/About'
 import AllDonationsPage from './pages/AllDonations'
-import BlogPage from './pages/Blog'
 import ContactPage from './pages/Contact'
 import EventsPage from './pages/Events'
 import FAQsPage from './pages/FAQs'
 import Login from './pages/Login'
 import LearnMorePage from './pages/LearnMore'
-import OrganizationsPage from './pages/Organizations'
-import VolunteerResourcesPage from './pages/VolunteerResources'
 import PrivacyPolicy from './pages/PrivacyPolicy'
 import TermsOfService from './pages/TermsOfService'
 
@@ -38,6 +36,7 @@ import OrganizationDonations from './pages/organization/OrganizationDonations'
 import OrganizationProfile from './pages/organization/OrganizationProfile'
 
 import VolunteerDashboard from './pages/volunteer/VolunteerDashboard'
+import VolunteerAllEvents from './pages/volunteer/VolunteerAllEvents'
 import VolunteerProfile from './pages/volunteer/VolunteerProfile'
 import VolunteerEvents from './pages/volunteer/VolunteerEvents'
 import VolunteerBadges from './pages/volunteer/VolunteerBadges'
@@ -106,19 +105,18 @@ const ScrollToTop = () => {
 
 function App() {
   return (
-    <Router>
-      <ScrollToTop />
-      <Routes>
+    <WebSocketProvider>
+      <Router>
+        <ScrollToTop />
+        <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/donations" element={<AllDonationsPage />} />
-        <Route path="/blog" element={<BlogPage />} />
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/events" element={<EventsPage />} />
         <Route path="/faqs" element={<FAQsPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/learn-more" element={<LearnMorePage />} />
-        <Route path="/volunteer-resources" element={<VolunteerResourcesPage />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms-of-service" element={<TermsOfService />} />
         
@@ -138,12 +136,14 @@ function App() {
 
 
         <Route path="/volunteer-dashboard" element={<VolunteerDashboard />} />
+        <Route path="/volunteer-all-events" element={<VolunteerAllEvents />} />
         <Route path="/volunteer-profile" element={<VolunteerProfile />} />
         <Route path="/volunteer-events" element={<VolunteerEvents />} />
         <Route path="/volunteer-badges" element={<VolunteerBadges />} />
         <Route path="/volunteer-feedback" element={<VolunteerFeedback />} />
-      </Routes>
-    </Router>
+        </Routes>
+      </Router>
+    </WebSocketProvider>
   )
 }
 

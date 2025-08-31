@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { FiStar } from 'react-icons/fi';
 import DashboardLayout from './DashboardLayout';
+import LoadingSpinner from '../../components/LoadingSpinner';
 
 const VolunteerFeedback = () => {
   const [feedback, setFeedback] = useState([]);
@@ -92,15 +93,12 @@ const VolunteerFeedback = () => {
   return (
     <DashboardLayout userType="volunteer">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">My Feedback</h1>
+        <h1 className="text-2xl font-bold mb-2">My Feedback</h1>
         <p className="text-gray-600">View feedback and ratings from organizations</p>
       </div>
       
       {loading ? (
-        <div className="flex justify-center items-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-          <p className="ml-4 text-gray-600">Loading feedback...</p>
-        </div>
+        <LoadingSpinner />
       ) : error ? (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
           <p className="text-red-600">{error}</p>

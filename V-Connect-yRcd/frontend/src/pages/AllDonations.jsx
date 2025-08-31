@@ -42,12 +42,45 @@ const AllDonations = () => {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
+																																																													 
+																																																																																																																								 
+								 
+									 
+									 
+								
+																	 
+																					
+																		 
+			 
           },
+		 
+						
+																								 
+																			 
+																																																													 
+																																																																																																																						
+								 
+									 
+									
+								
+																	 
+																				 
+																				 
         }
       );
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
+																						 
+																																																													 
+																																																																																																											
+								 
+									 
+									
+								
+																	 
+																					
+																							 
       }
 
       // Check if response is actually JSON
@@ -56,6 +89,13 @@ const AllDonations = () => {
         throw new Error(
           "Response is not JSON - backend may not be running correctly"
         );
+								 
+									 
+									 
+								
+																	 
+																				 
+																			
       }
 
       const data = await response.json();
@@ -66,6 +106,11 @@ const AllDonations = () => {
       setError("Failed to load donation requests. Please try again later.");
     } finally {
       setIsLoading(false);
+									 
+								
+																	 
+																				
+																				
     }
   };
 
@@ -80,6 +125,40 @@ const AllDonations = () => {
       currency: "LKR",
     }).format(amount);
   };
+																							 
+			 
+			
+		 
+						
+																		
+																					 
+																																																													 
+																																																																																																													
+								 
+									 
+									 
+								
+																	 
+																				 
+																						 
+			 
+			
+		 
+						
+																			 
+																		
+																																																													 
+																																																																																															 
+								 
+									 
+									 
+								
+																	 
+																				
+																			 
+			 
+		 
+	 
 
   // Format date
   const formatDate = (dateString) => {
@@ -114,129 +193,116 @@ const AllDonations = () => {
   return (
     <>
       <Navbar scrollY={scrollY} />
-
-      {/* Hero Section */}
-      <section className="bg-primary text-white py-12">
-        <div className="container mx-auto px-6">
-          <div className="max-w-3xl mx-auto text-center">
-            <motion.h1
-              className="text-4xl font-bold mb-4"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-            >
-              Donation Campaigns
-            </motion.h1>
-            <motion.p
-              className="text-lg text-blue-100"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-            >
-              Browse all current donation campaigns from our partner
-              organizations and support causes you believe in.
-            </motion.p>
-          </div>
-        </div>
-      </section>
-
-      {/* Campaigns Grid */}
-      <section className="py-16">
-        <div className="container mx-auto px-6">
-          {isLoading ? (
-            <div className="flex justify-center items-center py-20">
-              <LoadingSpinner />
-            </div>
-          ) : error ? (
-            <div className="text-center py-20">
-              <div className="text-red-600 mb-4">{error}</div>
-              <button
-                onClick={fetchDonationRequests}
-                className="bg-primary text-white px-6 py-2 rounded-md hover:bg-primary/90 transition-colors"
+      
+      <main className="pt-16">
+        {/* Hero Section */}
+        <section className="bg-primary text-white py-12">
+          <div className="container mx-auto px-6">
+            <div className="max-w-3xl mx-auto text-center">
+              <motion.h1
+                className="text-4xl font-bold mb-4"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
               >
-                Try Again
-              </button>
+                Donation Campaigns
+              </motion.h1>
+              <motion.p
+                className="text-lg text-blue-100"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+              >
+                Browse all current donation campaigns from our partner
+                organizations and support causes you believe in.
+              </motion.p>
             </div>
-          ) : donationRequests.length === 0 ? (
-            <div className="text-center py-20">
-              <div className="text-gray-600 mb-4">
-                No donation requests found.
+          </div>
+        </section>
+
+        {/* Campaigns Grid */}
+        <section className="py-16">
+          <div className="container mx-auto px-6">
+            {isLoading ? (
+              <div className="flex justify-center items-center py-20">
+                <LoadingSpinner />
               </div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-              {currentItems.map((donation, index) => (
-                <div
-                  key={donation.request_id}
-                  className="bg-white rounded-xl shadow-md hover:shadow-lg overflow-hidden h-full flex flex-col transition-all duration-300 hover:-translate-y-1"
+            ) : error ? (
+              <div className="text-center py-20">
+                <div className="text-red-600 mb-4">{error}</div>
+                <button
+                  onClick={fetchDonationRequests}
+                  className="bg-primary text-white px-6 py-2 rounded-md hover:bg-primary/90 transition-colors"
                 >
-                  <div className="bg-red-50 p-3 flex justify-center items-center border-b border-primary/10">
-                    <div className="w-12 h-12 sm:w-14 sm:h-14 bg-red-100 rounded-full flex items-center justify-center">
-                      <FiHeart size={24} className="text-red-500 sm:text-2xl" />
-                    </div>
-                  </div>
-                  <div className="p-3 sm:p-5 flex-grow flex flex-col">
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="text-base sm:text-lg font-semibold line-clamp-2">
+                  Try Again
+                </button>
+              </div>
+            ) : donationRequests.length === 0 ? (
+              <div className="text-center py-20">
+                <div className="text-gray-600 mb-4">
+                  No donation requests found.
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                {currentItems.map((donation, index) => (
+                  <div
+                    key={donation.request_id}
+                    className="bg-white rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200 hover:-translate-y-1"
+                  >
+                    <div className="p-6">
+                      <div className="flex justify-between items-center mb-3">
+                        <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                          donation.status === 'active' ? 'bg-green-100 text-green-700' : 
+                          donation.status === 'completed' ? 'bg-blue-100 text-blue-700' : 
+                          'bg-gray-100 text-gray-700'
+                        }`}>
+                          {donation.status.charAt(0).toUpperCase() + donation.status.slice(1)}
+                        </span>
+                      </div>
+                      
+                      <h3 className="text-lg font-semibold text-gray-900 mb-3 line-clamp-2">
                         {donation.title}
                       </h3>
-                      <div className="flex space-x-2 ml-2"></div>
-                    </div>
-
-                    <div className="flex items-center text-primary font-medium mb-2 text-sm">
-                      <FiHeart className="mr-2 text-red-500" size={16} />
-                      <span>
-                        Target: {formatCurrency(donation.target_amount)}
-                      </span>
-                    </div>
-
-                    <p className="text-gray-600 mb-3 line-clamp-10 text-sm">
-                      {donation.description}
-                    </p>
-
-                    {/* Contact Information - Highlighted */}
-
-                    <div className="border border-primary/20 p-2 sm:p-3 rounded-lg mb-2 sm:mb-3 hover:shadow-md transition-shadow">
-                      <h4 className="font-medium text-primary mb-1 sm:mb-2 text-xs sm:text-sm">
-                        Contact Information:
-                      </h4>
-                      <div className="space-y-1.5">
-                        <div className="flex items-start hover:translate-x-1 transition-transform">
-                          <FiPhone
-                            className="text-primary mr-2 flex-shrink-0 mt-0.5"
-                            size={14}
-                          />
-                          <span className="text-xs sm:text-sm font-medium break-words">
-                            {donation.contact_info}
+                      
+                      <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+                        {donation.description}
+                      </p>
+                      
+                      <div className="bg-red-50 rounded-lg p-3 mb-4">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium text-gray-600">Target</span>
+                          <span className="text-lg font-bold text-red-600">
+                            {formatCurrency(donation.target_amount)}
                           </span>
                         </div>
                       </div>
-                    </div>
-
-                    <div className="mt-auto flex flex-wrap justify-between text-xs sm:text-sm gap-2">
-                      <span
-                        className={`px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          donation.status === "active"
-                            ? "bg-green-100 text-green-800"
-                            : donation.status === "completed"
-                            ? "bg-blue-100 text-blue-800"
-                            : "bg-gray-100 text-gray-800"
-                        }`}
-                      >
-                        {donation.status.charAt(0).toUpperCase() +
-                          donation.status.slice(1)}
-                      </span>
-
-                      <span className="text-xs sm:text-sm text-gray-500 truncate">
-                        {window.innerWidth < 350 ? "Created:" : "Created:"}{" "}
-                        {formatDate(donation.created_at)}
-                      </span>
+                      
+                      {/* Campaign Details - Highlighted Section */}
+                      <div className="bg-gray-50 rounded-lg p-4 mb-4 border border-gray-200">
+                        <h4 className="text-sm font-semibold text-gray-700 mb-3">Campaign Details</h4>
+                        <div className="space-y-3">
+                          <div>
+                            <p className="text-xs text-gray-500">Contact</p>
+                            <p className="text-sm font-semibold text-gray-800">
+                              {donation.contact_info}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex justify-between items-center pt-4 border-t border-gray-100">
+                        <span className="text-xs text-gray-500">
+                          Created: {formatDate(donation.created_at)}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
+												
+														 
+                ))}
+              </div>
+            )}
 
           {/* Pagination */}
           {totalPages > 1 && donationRequests.length > 0 && (
@@ -289,63 +355,49 @@ const AllDonations = () => {
         </div>
       </section>
 
-      {/* CTA */}
-      <motion.section
-        className="py-16"
-        initial={{ opacity: 0 }}
-        whileInView={{ opacity: 1 }}
-        viewport={{ once: false }}
-        transition={{ duration: 0.5 }}
-      >
-        <div className="container mx-auto px-6">
-          <div className="max-w-3xl mx-auto text-center bg-gradient-to-r from-primary to-blue-700 text-white p-8 rounded-lg">
-            <motion.h2
-              className="text-3xl font-bold mb-6"
-              initial={{ opacity: 0, y: 10 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: false }}
-              transition={{ duration: 0.4 }}
-            >
-              Looking for More Ways to Help?
-            </motion.h2>
-            <motion.p
-              className="text-lg opacity-90 mb-8"
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: false }}
-              transition={{ duration: 0.4, delay: 0.1 }}
-            >
-              Besides donating, you can also volunteer your time and skills to
-              make a difference in your community.
-            </motion.p>
+        {/* CTA */}
+        <motion.section
+          className="py-16"
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: false }}
+          transition={{ duration: 0.5 }}
+        >
+          <div className="container mx-auto px-6">
             <motion.div
-              className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4"
-              initial={{ opacity: 0, y: 10 }}
+              className="text-center bg-primary text-white py-12 px-4 rounded-2xl"
+              initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: false }}
-              transition={{ duration: 0.4, delay: 0.2 }}
+              viewport={{ once: false, amount: 0.3 }}
+              transition={{ duration: 0.8 }}
             >
-              <Link to="/">
-                <motion.button
-                  className="bg-white text-primary hover:bg-gray-100 py-3 px-8 rounded-md font-medium transition-colors duration-300"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+              <h3 className="text-2xl md:text-3xl font-bold mb-4">Looking for More Ways to Help?</h3>
+              <p className="text-lg opacity-90 max-w-2xl mx-auto mb-8">
+                Besides donating, you can also volunteer your time and skills to
+                make a difference in your community.
+              </p>
+              <div className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
+                <Link to="/">
+                  <motion.button 
+                    className="bg-white text-primary hover:bg-gray-100 py-3 px-8 rounded-md font-medium transition-colors duration-300"
+                    whileHover={{ scale: 1.05, boxShadow: "0px 5px 15px rgba(255, 255, 255, 0.3)" }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    Back to Home
+                  </motion.button>
+                </Link>
+                <motion.button 
+                  className="bg-transparent border-2 border-white text-white hover:bg-white hover:text-primary py-3 px-8 rounded-md font-medium transition-colors duration-300"
+                  whileHover={{ scale: 1.05, boxShadow: "0px 5px 15px rgba(255, 255, 255, 0.2)" }}
+                  whileTap={{ scale: 0.95 }}
                 >
-                  Back to Home
+                  Join as Volunteer
                 </motion.button>
-              </Link>
-              <motion.button
-                className="border border-white bg-transparent hover:bg-white/10 py-3 px-8 rounded-md text-white font-medium transition-colors duration-300"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                Join as Volunteer
-              </motion.button>
+              </div>
             </motion.div>
           </div>
-        </div>
-      </motion.section>
-
+        </motion.section>
+      </main>
       <Footer />
     </>
   );
