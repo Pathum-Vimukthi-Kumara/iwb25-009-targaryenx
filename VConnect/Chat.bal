@@ -13,7 +13,7 @@ type ChatMessage record {
 };
 
 // Get private chat messages between organization and specific volunteer
-function getPrivateChatMessages(int eventId, int volunteerId) returns ChatMessage[]|error {
+function getVolunteerChatMessages(int eventId, int volunteerId) returns ChatMessage[]|error {
     ChatMessage[] messages = [];
     
     stream<record {|int org_id;|}, sql:Error?> orgStream = dbClient->query(`

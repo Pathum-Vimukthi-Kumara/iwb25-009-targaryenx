@@ -51,7 +51,7 @@ function fetchVolunteerProfile(int id) returns VolunteerProfile|error {
 }
 
 // Update or insert volunteer profile row.
-function upsertVolunteerProfile(int id, VolunteerProfileUpdate upd) returns VolunteerProfile|error {
+function updateVolunteerProfile(int id, VolunteerProfileUpdate upd) returns VolunteerProfile|error {
     // Ensure volunteer exists
     stream<record {|int uid;|}, sql:Error?> vs = dbClient->query(`SELECT user_id AS uid FROM users WHERE user_id = ${id} AND user_type = 'volunteer'`);
     record {|record {|int uid;|} value;|}|sql:Error? vn = vs.next();
