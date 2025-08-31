@@ -41,7 +41,7 @@ type EventCreateRequest record {|
     string end_time?;
     int required_volunteers?;
     string status?;
-    string eventId?; // optional
+    string eventId?; 
 |};
 
 type OrgDonation record {|

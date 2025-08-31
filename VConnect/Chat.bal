@@ -12,7 +12,7 @@ type ChatMessage record {
     string created_at;
 };
 
-// Get private chat messages between organization and specific volunteer
+
 function getVolunteerChatMessages(int eventId, int volunteerId) returns ChatMessage[]|error {
     ChatMessage[] messages = [];
     
@@ -28,7 +28,7 @@ function getVolunteerChatMessages(int eventId, int volunteerId) returns ChatMess
         return error("Event not found");
     }
     
-    // Query for ONLY messages between this volunteer and the org for this event
+    
     stream<record {| 
         int id;
         int event_id;
