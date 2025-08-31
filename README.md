@@ -45,7 +45,7 @@ V-Connect is a modern web platform designed to connect volunteers, organizations
 - **Ballerina** (RESTful APIs, JWT, SQL, HTTP, MIME, IO, Time)
 
 ### Database
-- **SQL Database** (MySQL, PostgreSQL, or SQLite)
+- **SQL Database** (MySQL)
 
 ---
 
@@ -53,7 +53,7 @@ V-Connect is a modern web platform designed to connect volunteers, organizations
 
 - [Node.js & npm](https://nodejs.org/)
 - [Ballerina](https://ballerina.io/downloads/)
-- SQL database (e.g., MySQL, PostgreSQL, or SQLite)
+- SQL database (MySQL
 
 ---
 
