@@ -1288,6 +1288,19 @@ service /api/admin on mainListener {
     }
 }
 service /pub on mainListener {
+
+    // Public: Get volunteer profile by ID (for orgs to view volunteer details)
+    resource function get volunteers/[int volunteer_id]/profile(http:Caller caller, http:Request req) returns error? {
+        VolunteerProfile|error profile = fetchVolunteerProfile(volunteer_id);
+        if profile is VolunteerProfile {
+            return caller->respond(profile);
+        }
+        http:Response r = new;
+        r.statusCode = http:STATUS_NOT_FOUND;
+        r.setJsonPayload({"error": (<error>profile).message()});
+        return caller->respond(r);
+    }
+
     resource function get badges/[int badge_id](http:Caller caller, http:Request req) returns error? {
         Badge|error b = getBadge(badge_id);
         if b is Badge {
@@ -1326,7 +1339,6 @@ service /pub on mainListener {
         OrgDonation[] donations = check getOrgDonations(organization_id);
         return caller->respond(donations);
     }
-
 
     // Public events
     resource function get events/org/[int organization_id](http:Caller caller, http:Request req) returns error? {
@@ -1440,8 +1452,12 @@ service /uploads on mainListener {
 @http:ServiceConfig {
     cors: {
         allowOrigins: ["http://localhost:5173"],
-        allowMethods: ["GET", "POST", "OPTIONS"],
-        allowHeaders: ["Content-Type", "Authorization"]
+        allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        // list the exact headers your frontend sends
+        allowHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+        allowCredentials: true,
+        maxAge: 86400,
+        exposeHeaders: ["Location", "Content-Length"]
     }
 }
 service /api/contact on mainListener {
@@ -1469,6 +1485,27 @@ service /api/contact on mainListener {
         }
         ContactMessage[] messages = check getAllContactMessages();
         return caller->respond(messages);
+    }
+
+    resource function put messages/[int messageId]/read(http:Caller caller, http:Request req) returns error? {
+        error? vErr = validateAuth(req, caller);
+        if vErr is error {
+            return;
+        }
+        ContactMessage|error result = updateContactMessageStatus(messageId, "read");
+        if result is ContactMessage {
+            return caller->respond({message: "Status updated successfully", contact: result});
+        }
+        error e = <error>result;
+        string msg = e.message();
+        int status = http:STATUS_INTERNAL_SERVER_ERROR;
+        if msg.indexOf("not found") >= 0 {
+            status = http:STATUS_NOT_FOUND;
+        }
+        http:Response r = new;
+        r.statusCode = status;
+        r.setJsonPayload({"error": msg});
+        return caller->respond(r);
     }
 
     resource function post upload_photo(http:Request request, http:Caller caller) returns error? {
