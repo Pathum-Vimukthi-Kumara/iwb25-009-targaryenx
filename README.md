@@ -8,10 +8,6 @@ V-Connect is a modern web platform designed to connect volunteers, organizations
 
 ## 📂 Project Structure  
 
-
-# V-Connect Platform
-
-
 ## Architecture
 
 ### High-Level Architecture
