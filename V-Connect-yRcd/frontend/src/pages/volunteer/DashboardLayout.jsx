@@ -2,8 +2,13 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
+<<<<<<< Updated upstream
   FiHome, FiCalendar, FiUser, FiLogOut, 
   FiMenu, FiX, FiAlertCircle, FiAward, FiAlertTriangle 
+=======
+  FiHome, FiUsers, FiCalendar, FiUser, FiLogOut, 
+  FiSettings, FiPlusCircle, FiHeart, FiAward, FiMenu, FiX, FiAlertCircle, FiGrid, FiAlertTriangle 
+>>>>>>> Stashed changes
 } from 'react-icons/fi';
 
 const DashboardLayout = ({ children, userType = 'volunteer' }) => {
@@ -14,6 +19,7 @@ const DashboardLayout = ({ children, userType = 'volunteer' }) => {
   const location = useLocation();
   const currentPath = location.pathname;
   
+<<<<<<< Updated upstream
   // Close mobile menu on resize
   useEffect(() => {
     const handleResize = () => {
@@ -41,6 +47,148 @@ const DashboardLayout = ({ children, userType = 'volunteer' }) => {
       setShowLogoutModal(false);
       navigate('/login');
     }, 150);
+=======
+  // Show logout confirmation modal
+  const showLogoutConfirmation = () => {
+    setShowLogoutModal(true);
+  };
+  
+  // Handle logout with animation
+  const handleLogout = () => {
+    setTimeout(() => {
+      localStorage.removeItem('token');
+      localStorage.removeItem('userId');
+      localStorage.removeItem('userType');
+      setShowLogoutModal(false);
+      navigate('/login');
+    }, 150);
+  };
+  
+  // Define menu items based on user type
+  const getMenuItems = () => {
+    switch(userType) {
+      case 'volunteer':
+        return [
+          { 
+            path: '/volunteer-dashboard', 
+            icon: <FiHome size={20} />, 
+            label: 'Dashboard',
+            description: 'View available events and opportunities'
+          },
+          { 
+            path: '/volunteer-all-events', 
+            icon: <FiGrid size={20} />, 
+            label: 'All Events',
+            description: 'Browse all available volunteer events'
+          },
+          { 
+            path: '/volunteer-events', 
+            icon: <FiCalendar size={20} />, 
+            label: 'My Events',
+            description: 'Track your event applications and participation'
+          },
+          { 
+            path: '/volunteer-profile', 
+            icon: <FiUser size={20} />, 
+            label: 'Profile',
+            description: 'Manage your volunteer profile'
+          },
+          { 
+            path: '/volunteer-badges', 
+            icon: <FiAward size={20} />, 
+            label: 'Badges',
+            description: 'View your earned badges and achievements'
+          },
+          { 
+            path: '/volunteer-feedback', 
+            icon: <FiAlertCircle size={20} />, 
+            label: 'Feedback',
+            description: 'View feedback received from organizations'
+          }
+        ];
+      case 'organization':
+        return [
+          { 
+            path: '/organization-dashboard', 
+            icon: <FiHome size={20} />, 
+            label: 'Dashboard',
+            description: 'Monitor your organization activity'
+          },
+          { 
+            path: '/organization-events', 
+            icon: <FiCalendar size={20} />, 
+            label: 'Events',
+            description: 'Manage your events and participation'
+          },
+          { 
+            path: '/organization-volunteers', 
+            icon: <FiUsers size={20} />, 
+            label: 'Volunteers',
+            description: 'View and manage volunteer requests'
+          },
+          { 
+            path: '/create-event', 
+            icon: <FiPlusCircle size={20} />, 
+            label: 'Create Event',
+            description: 'Create new volunteer events'
+          },
+          { 
+            path: '/my-donations', 
+            icon: <FiHeart size={20} />, 
+            label: 'My Donations',
+            description: 'Manage your donation campaigns'
+          },
+          { 
+            path: '/create-donation', 
+            icon: <FiPlusCircle size={20} />, 
+            label: 'Create Donation',
+            description: 'Start a donation campaign'
+          },
+          { 
+            path: '/organization-profile', 
+            icon: <FiUser size={20} />, 
+            label: 'Profile',
+            description: 'Manage your organization profile'
+          }
+          
+        ];
+      case 'admin':
+        return [
+          { 
+            path: '/admin-dashboard', 
+            icon: <FiHome size={20} />, 
+            label: 'Dashboard',
+            description: 'Platform overview and statistics'
+          },
+          { 
+            path: '/admin-users', 
+            icon: <FiUsers size={20} />, 
+            label: 'Users',
+            description: 'Manage platform users'
+          },
+          { 
+            path: '/admin-events', 
+            icon: <FiCalendar size={20} />, 
+            label: 'Events',
+            description: 'Review and manage events'
+          },
+          { 
+            path: '/admin-badges', 
+            icon: <FiAward size={20} />, 
+            label: 'Badges',
+            description: 'Assign and manage badges'
+          },
+          { 
+            path: '/admin-settings', 
+            icon: <FiSettings size={20} />, 
+            label: 'Settings',
+            description: 'Platform configuration'
+          }
+        ];
+      default:
+        return [];
+    }
+>>>>>>> Stashed changes
   };
   
   // Define menu items for volunteer
@@ -116,7 +264,13 @@ const DashboardLayout = ({ children, userType = 'volunteer' }) => {
           <div className="p-4 border-b border-gray-200">
             <div className="flex items-center space-x-2">
               <span className="font-bold text-2xl">
+<<<<<<< Updated upstream
                 <span className="text-primary cursor-pointer inline-block hover:brightness-150 hover:drop-shadow-[0_0_8px_rgba(59,130,246,0.6)] transition-all duration-300">V</span>
+=======
+                <span className="text-primary cursor-pointer inline-block hover:brightness-150 hover:drop-shadow-[0_0_8px_rgba(59,130,246,0.6)] transition-all duration-300">
+                  V
+                </span>
+>>>>>>> Stashed changes
                 <span className="text-dark">-Connect</span>
               </span>
             </div>
@@ -222,8 +376,11 @@ const DashboardLayout = ({ children, userType = 'volunteer' }) => {
               {isSidebarOpen && <span className="pt-0.5">Logout</span>}
             </button>
           </div>
+<<<<<<< Updated upstream
           
 
+=======
+>>>>>>> Stashed changes
         </div>
       </motion.div>
       

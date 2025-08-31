@@ -4,7 +4,6 @@ import { FiMail, FiLock, FiUser, FiPhone, FiMapPin, FiGlobe, FiCheck } from 'rea
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-import SavingSpinner from '../components/SavingSpinner';
 
 // Import the login and signup images
 import loginImg from '../assets/loginimg.png';
@@ -30,14 +29,6 @@ const Login = () => {
     }
   }, [location]);
   
-  const defaultSkills = [
-    'Event Planning', 'Teaching/Tutoring', 'Fundraising', 'Community Outreach',
-    'Administrative Support', 'Social Media Management', 'Photography', 'Graphic Design',
-    'Public Speaking', 'Leadership', 'Project Management', 'Customer Service',
-    'Data Entry', 'Research', 'Writing/Editing', 'Translation',
-    'Healthcare Support', 'Environmental Conservation', 'Animal Care', 'Food Service'
-  ];
-
   // Form states
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [volunteerForm, setVolunteerForm] = useState({ 
@@ -45,43 +36,23 @@ const Login = () => {
     email: '', 
     password: '', 
     confirmPassword: '',
-    phone: '',
+    phone: ''
   });
-  const [selectedSkills, setSelectedSkills] = useState([]);
-  const [customSkill, setCustomSkill] = useState('');
-  const [showCustomInput, setShowCustomInput] = useState(false);
   const [organizationForm, setOrganizationForm] = useState({
     name: '',
     email: '',
     password: '',
     confirmPassword: '',
     phone: '',
+    description: '',
+    address: '',
+    website: ''
   });
   
   // Error and loading states
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [formStep, setFormStep] = useState(1); // For multi-step signup forms
-
-  const handleSkillToggle = (skill) => {
-    setSelectedSkills(prev => {
-      const updated = prev.includes(skill) 
-        ? prev.filter(s => s !== skill)
-        : [...prev, skill];
-      setVolunteerForm(prevForm => ({ ...prevForm, skills: updated.join(', ') }));
-      return updated;
-    });
-  };
-
-  const handleCustomSkillAdd = () => {
-    if (customSkill.trim() && !selectedSkills.includes(customSkill.trim())) {
-      const updated = [...selectedSkills, customSkill.trim()];
-      setSelectedSkills(updated);
-      setVolunteerForm(prev => ({ ...prev, skills: updated.join(', ') }));
-      setCustomSkill('');
-      setShowCustomInput(false);
-    }
-  };
 
   // Handle login form submission
   const handleLogin = async (e) => {
@@ -100,7 +71,7 @@ const Login = () => {
       });
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.error);
+        throw new Error(data.message || 'Login failed');
       }
       // Store token and user info in localStorage
       localStorage.setItem('token', data.token);
@@ -137,20 +108,27 @@ const Login = () => {
     
     try {
       // Register the volunteer using the new API structure
+      const registrationData = {
+        email: volunteerForm.email,
+        password: volunteerForm.password,
+        user_type: 'volunteer',
+        name: volunteerForm.name,
+        phone: volunteerForm.phone,
+
+      };
+      console.log('Registration data being sent:', registrationData);
+      
   const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: volunteerForm.email,
-          password: volunteerForm.password,
-          user_type: 'volunteer',
-          name: volunteerForm.name,
-          phone: volunteerForm.phone
-        })
+        body: JSON.stringify(registrationData)
       });
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.error);
+        if (response.status === 409) {
+          throw new Error('Email already exists. Please use a different email address.');
+        }
+        throw new Error(data.message || 'Registration failed');
       }
       // Automatically switch to login
       setActiveTab('login');
@@ -250,10 +228,12 @@ const Login = () => {
   return (
     <>
       <Navbar />
-
+      <main className="pt-20 pb-8 min-h-screen flex flex-col bg-gray-50">
+        <div className="flex-grow flex items-center justify-center py-8 px-4 sm:px-6 lg:px-8 bg-gray-50">
+          <div className="max-w-6xl w-full bg-white rounded-xl overflow-hidden shadow-lg min-h-[570px]">
             <div className="flex flex-col md:flex-row">
               {/* Left side - Image */}
-              <div className="md:w-1/2 bg-primary">
+              <div className="md:w-1/2 bg-white">
                 <motion.div 
                   className="h-full w-full"
                   animate={{ opacity: 1 }}
@@ -263,13 +243,13 @@ const Login = () => {
                   <img 
                     src={activeTab === 'login' ? loginImg : signupImg} 
                     alt={activeTab === 'login' ? "Login Image" : "Signup Image"} 
-                    className="h-full w-full object-cover"
+                    className="h-full w-full object-cover rounded-tl-xl md:rounded-bl-xl md:rounded-tr-none rounded-tr-xl"
                   />
                 </motion.div>
               </div>
 
               {/* Right side - Form */}
-              <div className="md:w-1/2 p-8">
+              <div className="md:w-1/2 p-6 md:p-8 overflow-y-auto max-h-[80vh]">
                 {/* Tab Navigation */}
                 <div className="flex mb-8 border-b">
                   <button
@@ -359,29 +339,13 @@ const Login = () => {
                           </div>
                         </div>
                         
-                        <motion.button
+                        <button
                           type="submit"
                           disabled={isLoading}
-                          className="w-full bg-primary hover:bg-primary/90 text-white font-medium py-2.5 px-4 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 flex items-center justify-center min-h-[42px]"
-                          whileHover={!isLoading ? { scale: 1.02 } : {}}
-                          whileTap={!isLoading ? { scale: 0.98 } : {}}
+                          className="w-full bg-primary hover:bg-primary/90 text-white font-medium py-2.5 px-4 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50"
                         >
-                          <AnimatePresence mode="wait">
-                            {isLoading ? (
-                              <SavingSpinner key="logging-in" message="Logging in..." size="small" />
-                            ) : (
-                              <motion.span
-                                key="login"
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                transition={{ duration: 0.15 }}
-                              >
-                                Log In
-                              </motion.span>
-                            )}
-                          </AnimatePresence>
-                        </motion.button>
+                          {isLoading ? 'Logging in...' : 'Log In'}
+                        </button>
                         
                         <div className="mt-4 text-center text-sm text-gray-600">
                           Don't have an account?{' '}
@@ -522,109 +486,34 @@ const Login = () => {
                           </div>
                           
                           <div className="mb-4">
-                            <label className="block text-gray-700 text-sm font-medium mb-2" htmlFor="volunteer-bio">
-                              Bio (Optional)
+                            <label className="block text-gray-700 text-sm font-medium mb-2" htmlFor="volunteer-phone">
+                              Phone Number
                             </label>
-                            <textarea
-                              id="volunteer-bio"
-                              value={volunteerForm.bio}
-                              onChange={(e) => setVolunteerForm({...volunteerForm, bio: e.target.value})}
-                              className="block w-full py-2.5 px-3 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary"
-                              placeholder="Tell us about yourself..."
-                              rows="3"
-                            />
-                          </div>
-                          
-                          <div className="mb-6">
-                            <label className="block text-gray-700 text-sm font-medium mb-2">Skills (Optional)</label>
-                            <div className="border rounded-md p-3 max-h-40 overflow-y-auto">
-                              <div className="grid grid-cols-2 gap-2 mb-3">
-                                {defaultSkills.map(skill => (
-                                  <label key={skill} className="flex items-center space-x-2 cursor-pointer">
-                                    <input
-                                      type="checkbox"
-                                      checked={selectedSkills.includes(skill)}
-                                      onChange={() => handleSkillToggle(skill)}
-                                      className="rounded accent-primary"
-                                    />
-                                    <span className="text-sm">{skill}</span>
-                                  </label>
-                                ))}
+                            <div className="relative">
+                              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                <FiPhone className="text-gray-400" />
                               </div>
-                              <div className="border-t pt-2">
-                                {!showCustomInput ? (
-                                  <button
-                                    type="button"
-                                    onClick={() => setShowCustomInput(true)}
-                                    className="text-primary text-sm hover:underline"
-                                  >
-                                    + Add custom skill
-                                  </button>
-                                ) : (
-                                  <div className="flex space-x-2">
-                                    <input
-                                      type="text"
-                                      value={customSkill}
-                                      onChange={(e) => setCustomSkill(e.target.value)}
-                                      placeholder="Enter custom skill"
-                                      className="flex-1 px-2 py-1 border rounded text-sm"
-                                      onKeyPress={(e) => e.key === 'Enter' && handleCustomSkillAdd()}
-                                    />
-                                    <button
-                                      type="button"
-                                      onClick={handleCustomSkillAdd}
-                                      className="px-2 py-1 bg-primary text-white rounded text-sm"
-                                    >
-                                      Add
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => { setShowCustomInput(false); setCustomSkill(''); }}
-                                      className="px-2 py-1 border rounded text-sm"
-                                    >
-                                      Cancel
-                                    </button>
-                                  </div>
-                                )}
-                              </div>
+                              <input
+                                id="volunteer-phone"
+                                type="tel"
+                                required
+                                value={volunteerForm.phone}
+                                onChange={(e) => setVolunteerForm({...volunteerForm, phone: e.target.value})}
+                                className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary"
+                                placeholder="+1 (555) 123-4567"
+                              />
                             </div>
-                            {selectedSkills.length > 0 && (
-                              <div className="mt-2">
-                                <p className="text-sm text-gray-600 mb-1">Selected skills:</p>
-                                <div className="flex flex-wrap gap-1">
-                                  {selectedSkills.map(skill => (
-                                    <span key={skill} className="bg-primary/10 text-primary px-2 py-1 rounded-full text-xs">
-                                      {skill}
-                                    </span>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
                           </div>
                           
-                          <motion.button
+
+                          
+                          <button
                             type="submit"
                             disabled={isLoading}
-                            className="w-full bg-primary hover:bg-primary/90 text-white font-medium py-2.5 px-4 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 flex items-center justify-center min-h-[42px]"
-                            whileHover={!isLoading ? { scale: 1.02 } : {}}
-                            whileTap={!isLoading ? { scale: 0.98 } : {}}
+                            className="w-full bg-primary hover:bg-primary/90 text-white font-medium py-2.5 px-4 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50"
                           >
-                            <AnimatePresence mode="wait">
-                              {isLoading ? (
-                                <SavingSpinner key="creating-account" message="Creating Account..." size="small" />
-                              ) : (
-                                <motion.span
-                                  key="signup"
-                                  initial={{ opacity: 0 }}
-                                  animate={{ opacity: 1 }}
-                                  exit={{ opacity: 0 }}
-                                  transition={{ duration: 0.15 }}
-                                >
-                                  Sign Up
-                                </motion.span>
-                              )}
-                            </AnimatePresence>
-                          </motion.button>
+                            {isLoading ? 'Creating Account...' : 'Sign Up'}
+                          </button>
                           
                           <div className="mt-4 text-center text-sm text-gray-600">
                             Already have an account?{' '}
@@ -760,6 +649,26 @@ const Login = () => {
                             </div>
                           </div>
                           
+                          <div className="mb-4">
+                            <label className="block text-gray-700 text-sm font-medium mb-2" htmlFor="org-phone">
+                              Phone Number
+                            </label>
+                            <div className="relative">
+                              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                <FiPhone className="text-gray-400" />
+                              </div>
+                              <input
+                                id="org-phone"
+                                type="tel"
+                                required
+                                value={organizationForm.phone}
+                                onChange={(e) => setOrganizationForm({...organizationForm, phone: e.target.value})}
+                                className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary"
+                                placeholder="+1 (555) 123-4567"
+                              />
+                            </div>
+                          </div>
+                          
                           <div className="mb-6">
                             <label className="block text-gray-700 text-sm font-medium mb-2" htmlFor="org-website">
                               Website (Optional)
@@ -779,29 +688,13 @@ const Login = () => {
                             </div>
                           </div>
                           
-                          <motion.button
+                          <button
                             type="submit"
                             disabled={isLoading}
-                            className="w-full bg-accent hover:bg-accent/90 text-white font-medium py-2.5 px-4 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent disabled:opacity-50 flex items-center justify-center min-h-[42px]"
-                            whileHover={!isLoading ? { scale: 1.02 } : {}}
-                            whileTap={!isLoading ? { scale: 0.98 } : {}}
+                            className="w-full bg-accent hover:bg-accent/90 text-white font-medium py-2.5 px-4 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent disabled:opacity-50"
                           >
-                            <AnimatePresence mode="wait">
-                              {isLoading ? (
-                                <SavingSpinner key="creating-org" message="Creating Organization..." size="small" />
-                              ) : (
-                                <motion.span
-                                  key="register"
-                                  initial={{ opacity: 0 }}
-                                  animate={{ opacity: 1 }}
-                                  exit={{ opacity: 0 }}
-                                  transition={{ duration: 0.15 }}
-                                >
-                                  Register Organization
-                                </motion.span>
-                              )}
-                            </AnimatePresence>
-                          </motion.button>
+                            {isLoading ? 'Creating Organization...' : 'Register Organization'}
+                          </button>
                           
                           <div className="mt-4 text-center text-sm text-gray-600">
                             Already have an account?{' '}

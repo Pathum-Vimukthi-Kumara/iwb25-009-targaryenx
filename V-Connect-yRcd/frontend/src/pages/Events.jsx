@@ -116,9 +116,11 @@ const Events = () => {
                     
                     <p className="text-gray-600 mb-6">{event.description}</p>
                     
-                    <button className="w-full btn-primary text-center py-2 rounded">
-                      Register Now
-                    </button>
+                    <Link to="/login?type=volunteer">
+                      <button className="w-full btn-primary text-center py-2 rounded">
+                        Register Now
+                      </button>
+                    </Link>
                   </div>
                 </motion.div>
               ))}
@@ -128,9 +130,11 @@ const Events = () => {
               <p className="text-gray-600 mb-6">
                 This is placeholder content for the Events page. In a real implementation, this would integrate with a events management system and allow users to register.
               </p>
-              <button className="btn-outline px-8 py-3">
-                View More Events
-              </button>
+              <Link to="/login">
+                <button className="btn-outline px-8 py-3">
+                  View More Events
+                </button>
+              </Link>
             </div>
           </div>
         </section>
