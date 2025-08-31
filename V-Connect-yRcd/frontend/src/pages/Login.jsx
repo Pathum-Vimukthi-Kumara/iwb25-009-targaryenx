@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiMail, FiLock, FiUser, FiPhone, FiMapPin, FiGlobe, FiCheck } from 'react-icons/fi';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
@@ -78,13 +80,16 @@ const Login = () => {
       localStorage.setItem('user_id', data.user_id);
       localStorage.setItem('user_type', data.user_type);
       // Redirect to appropriate dashboard based on user type
-      if (data.user_type === 'volunteer') {
-        navigate('/volunteer-dashboard');
-      } else if (data.user_type === 'organization') {
-        navigate('/organization-dashboard');
-      } else if (data.user_type === 'admin') {
-        navigate('/admin-dashboard');
-      }
+      toast.success('Login successful!');
+      setTimeout(() => {
+        if (data.user_type === 'volunteer') {
+          navigate('/volunteer-dashboard');
+        } else if (data.user_type === 'organization') {
+          navigate('/organization-dashboard');
+        } else if (data.user_type === 'admin') {
+          navigate('/admin-dashboard');
+        }
+      }, 1200);
       
     } catch (error) {
       setError(error.message);
@@ -227,7 +232,8 @@ const Login = () => {
 
   return (
     <>
-      <Navbar />
+  <Navbar />
+  <ToastContainer position="top-right" autoClose={2000} hideProgressBar={false} newestOnTop closeOnClick pauseOnFocusLoss draggable pauseOnHover />
       <main className="pt-20 pb-8 min-h-screen flex flex-col bg-gray-50">
         <div className="flex-grow flex items-center justify-center py-8 px-4 sm:px-6 lg:px-8 bg-gray-50">
           <div className="max-w-6xl w-full bg-white rounded-xl overflow-hidden shadow-lg min-h-[570px]">

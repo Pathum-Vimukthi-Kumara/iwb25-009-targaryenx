@@ -1,12 +1,18 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiCheckCircle, FiXCircle, FiTrash2, FiAlertCircle, FiInfo } from 'react-icons/fi';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import AdminSidebar from './AdminSidebar';
+import LoadingSpinner from '../../components/LoadingSpinner';
+import ConfirmModal from '../../components/common/ConfirmModal';
 
 const AdminOrganizations = () => {
   const [organizations, setOrganizations] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -164,21 +170,31 @@ const AdminOrganizations = () => {
     }
   };
 
-  const handleDelete = async (userId) => {
-    if (!window.confirm('Are you sure you want to delete this organization?')) {
-      return;
-    }
-    
-    // If we're in sample data mode, just update the UI without API call
-    if (error) {
-      setOrganizations(organizations.filter(org => org.user_id !== userId));
-      return;
-    }
+  const handleDelete = (userId) => {
+    console.log('Delete button clicked for user:', userId);
+    const user = organizations.find(org => org.user_id === userId);
+    console.log('User to delete:', user);
+    setUserToDelete(user);
+    setShowDeleteModal(true);
+    console.log('Modal should be open now');
+  };
+
+  const confirmDelete = async () => {
+    if (!userToDelete) return;
     
     try {
+      // If we're in sample data mode, just update the UI without API call
+      if (error) {
+        setOrganizations(organizations.filter(org => org.user_id !== userToDelete.user_id));
+        toast.success('Organization deleted successfully!');
+        setShowDeleteModal(false);
+        setUserToDelete(null);
+        return;
+      }
+      
       const token = localStorage.getItem('token');
       
-      const response = await fetch(`/api/admin/users/${userId}`, {
+      const response = await fetch(`/api/admin/users/${userToDelete.user_id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -190,17 +206,28 @@ const AdminOrganizations = () => {
       }
       
       // Remove from local state
-      setOrganizations(organizations.filter(org => org.user_id !== userId));
+      setOrganizations(organizations.filter(org => org.user_id !== userToDelete.user_id));
+      toast.success('Organization deleted successfully!');
       
     } catch (deleteError) {
       console.error('Error deleting organization:', deleteError);
-      alert('Failed to delete organization. Please try again.');
+      toast.error('Failed to delete organization. Please try again.');
+    } finally {
+      setShowDeleteModal(false);
+      setUserToDelete(null);
     }
   };
 
   return (
+    <>
     <AdminSidebar>
       <div className='p-5'>
+      {/* Debug info */}
+      {showDeleteModal && (
+        <div className="bg-blue-100 p-2 mb-4 text-sm">
+          Debug: Modal should be open. User to delete: {userToDelete?.name}
+        </div>
+      )}
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-semibold text-gray-800">Manage Organizations</h1>
         <button 
@@ -234,9 +261,7 @@ const AdminOrganizations = () => {
       )}
       
       {isLoading ? (
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-        </div>
+         <LoadingSpinner />
       ) : (
         <div className="bg-white shadow-md rounded-lg overflow-hidden">
           <table className="min-w-full divide-y divide-gray-200">
@@ -325,6 +350,31 @@ const AdminOrganizations = () => {
       )}
       </div>
     </AdminSidebar>
+    
+    <ConfirmModal
+      isOpen={showDeleteModal}
+      title="Delete Organization"
+      message={`Are you sure you want to delete ${userToDelete?.name || 'this organization'}? This action cannot be undone.`}
+      onConfirm={confirmDelete}
+      onCancel={() => {
+        console.log('Modal cancelled');
+        setShowDeleteModal(false);
+        setUserToDelete(null);
+      }}
+    />
+    
+    <ToastContainer
+      position="top-right"
+      autoClose={3000}
+      hideProgressBar={false}
+      newestOnTop={false}
+      closeOnClick
+      rtl={false}
+      pauseOnFocusLoss
+      draggable
+      pauseOnHover
+    />
+    </>
   );
 };
 

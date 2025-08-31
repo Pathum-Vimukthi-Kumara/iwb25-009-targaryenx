@@ -3,12 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import AdminSidebar from './AdminSidebar';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import { FiAward, FiPlus, FiUser, FiCalendar } from 'react-icons/fi';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const AdminBadges = () => {
   const [volunteers, setVolunteers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [successMessage, setSuccessMessage] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [selectedVolunteer, setSelectedVolunteer] = useState(null);
   const [badgeForm, setBadgeForm] = useState({
@@ -98,7 +99,6 @@ const AdminBadges = () => {
     e.preventDefault();
     try {
       const token = localStorage.getItem('token');
-      
       const response = await fetch(`http://localhost:9000/api/admin/volunteers/${selectedVolunteer.user_id}/performance_badges`, {
         method: 'POST',
         headers: {
@@ -110,20 +110,13 @@ const AdminBadges = () => {
           badge_description: badgeForm.badge_description
         })
       });
-      
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to award badge');
       }
-      
-      setSuccessMessage(`Badge "${badgeForm.badge_name}" awarded to ${selectedVolunteer.name} successfully!`);
+      toast.success(`Badge "${badgeForm.badge_name}" awarded to ${selectedVolunteer.name} successfully!`);
       setShowModal(false);
       setBadgeForm({ badge_name: '', badge_description: '' });
-      
-      setTimeout(() => {
-        setSuccessMessage('');
-      }, 5000);
-      
     } catch (error) {
       console.error('Error awarding badge:', error);
       setError(error.message || 'Failed to award badge. Please try again.');
@@ -153,12 +146,6 @@ const AdminBadges = () => {
         {error && (
           <div className="bg-red-50 text-red-600 p-4 rounded-md mb-6">
             {error}
-          </div>
-        )}
-
-        {successMessage && (
-          <div className="bg-green-50 text-green-600 p-4 rounded-md mb-6">
-            {successMessage}
           </div>
         )}
 
@@ -318,6 +305,8 @@ const AdminBadges = () => {
             </div>
           </div>
         )}
+
+        <ToastContainer position="top-right" autoClose={2000} hideProgressBar={false} newestOnTop closeOnClick pauseOnFocusLoss draggable pauseOnHover />
       </div>
     </AdminSidebar>
   );

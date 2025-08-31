@@ -1553,9 +1553,11 @@ service /uploads on mainListener {
 
 @http:ServiceConfig {
     cors: {
-        allowOrigins: ["http://localhost:5173", "http://localhost:5174"],
-        allowMethods: ["GET", "POST", "OPTIONS"],
-        allowHeaders: ["Content-Type", "Authorization"]
+    allowOrigins: ["http://localhost:5173", "http://localhost:5174"],
+    allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+    allowCredentials: true,
+    maxAge: 86400
     }
 }
 

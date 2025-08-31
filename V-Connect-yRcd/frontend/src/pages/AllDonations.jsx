@@ -14,6 +14,9 @@ import {
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import LoadingSpinner from "../components/LoadingSpinner";
+import ConfirmModal from '../components/common/ConfirmModal';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const AllDonations = () => {
   const [donationRequests, setDonationRequests] = useState([]);
@@ -29,6 +32,8 @@ const AllDonations = () => {
     contact_info: "",
     status: "active",
   });
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [donationToDelete, setDonationToDelete] = useState(null);
 
   const itemsPerPage = 6;
   const totalPages = Math.ceil(donationRequests.length / itemsPerPage);
@@ -190,6 +195,31 @@ const AllDonations = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  // Add this function
+  const handleDeleteDonation = async (donation) => {
+    setDonationToDelete(donation);
+    setShowConfirm(true);
+  };
+
+  const confirmDeleteDonation = async () => {
+    if (!donationToDelete) return;
+    try {
+      // Replace with your actual delete API call
+      const response = await fetch(`http://localhost:9000/api/donation_requests/${donationToDelete.request_id}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (!response.ok) throw new Error('Failed to delete donation request');
+      toast.success('Donation request deleted successfully!');
+      setDonationRequests(donationRequests.filter(d => d.request_id !== donationToDelete.request_id));
+    } catch (err) {
+      toast.error('Failed to delete donation request.');
+    } finally {
+      setShowConfirm(false);
+      setDonationToDelete(null);
+    }
+  };
+
   return (
     <>
       <Navbar scrollY={scrollY} />
@@ -295,6 +325,14 @@ const AllDonations = () => {
                         <span className="text-xs text-gray-500">
                           Created: {formatDate(donation.created_at)}
                         </span>
+                        <div className="flex space-x-2">
+                          <button className="text-gray-500 hover:text-gray-700 transition-colors">
+                            <FiEdit />
+                          </button>
+                          <button onClick={() => handleDeleteDonation(donation)} className="text-red-500 hover:text-red-700 transition-colors">
+                            <FiTrash2 />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -399,6 +437,14 @@ const AllDonations = () => {
         </motion.section>
       </main>
       <Footer />
+      <ConfirmModal
+        isOpen={showConfirm}
+        title="Delete Donation Request"
+        message="Are you sure you want to delete this donation request?"
+        onConfirm={confirmDeleteDonation}
+        onCancel={() => setShowConfirm(false)}
+      />
+      <ToastContainer position="top-right" autoClose={2000} hideProgressBar={false} newestOnTop closeOnClick pauseOnFocusLoss draggable pauseOnHover />
     </>
   );
 };

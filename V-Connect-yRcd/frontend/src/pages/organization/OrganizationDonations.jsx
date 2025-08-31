@@ -3,6 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { FiPlus, FiEdit, FiTrash2, FiHeart, FiAtSign } from 'react-icons/fi';
 import OrganizationSidebar from './OrganizationSidebar';
 import LoadingSpinner from '../../components/LoadingSpinner';
+import ConfirmModal from '../../components/common/ConfirmModal';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const OrganizationDonations = () => {
   const [donationRequests, setDonationRequests] = useState([]);
@@ -14,6 +17,8 @@ const OrganizationDonations = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [selectedDonation, setSelectedDonation] = useState(null);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [donationToDelete, setDonationToDelete] = useState(null);
   const navigate = useNavigate();
   
   // Form state for creating/editing donation requests
@@ -143,29 +148,27 @@ const OrganizationDonations = () => {
     }
   };
   
-  const handleDeleteDonation = async (requestId) => {
-    if (window.confirm('Are you sure you want to delete this donation request?')) {
-      try {
-        const token = localStorage.getItem('token');
-        
-        const response = await fetch(`/api/org/donation_requests/${requestId}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        
-        if (!response.ok) {
-          throw new Error('Failed to delete donation request');
-        }
-        
-        // Refresh donation requests list
-        fetchDonationRequests();
-        
-      } catch (error) {
-        console.error('Error deleting donation request:', error);
-        setError('Failed to delete donation request. Please try again.');
-      }
+  const handleDeleteDonation = (requestId) => {
+    setDonationToDelete(requestId);
+    setShowConfirm(true);
+  };
+
+  const confirmDeleteDonation = async () => {
+    if (!donationToDelete) return;
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/org/donation_requests/${donationToDelete}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!response.ok) throw new Error('Failed to delete donation request');
+      toast.success('Donation request deleted successfully!');
+      fetchDonationRequests();
+    } catch (error) {
+      toast.error('Failed to delete donation request.');
+    } finally {
+      setShowConfirm(false);
+      setDonationToDelete(null);
     }
   };
   
@@ -582,6 +585,15 @@ const OrganizationDonations = () => {
             </div>
           </div>
         )}
+        
+        <ConfirmModal
+          isOpen={showConfirm}
+          title="Delete Donation Request"
+          message="Are you sure you want to delete this donation request?"
+          onConfirm={confirmDeleteDonation}
+          onCancel={() => setShowConfirm(false)}
+        />
+        <ToastContainer position="top-right" autoClose={2000} hideProgressBar={false} newestOnTop closeOnClick pauseOnFocusLoss draggable pauseOnHover />
         </div>
       </OrganizationSidebar>
     </div>

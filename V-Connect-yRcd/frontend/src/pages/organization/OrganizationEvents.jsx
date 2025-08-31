@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import ConfirmModal from '../../components/common/ConfirmModal';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import LoadingSpinner from '../../components/LoadingSpinner';
@@ -37,6 +38,9 @@ const OrganizationEvents = () => {
   const [chatInput, setChatInput] = useState("");
   const [chatSending, setChatSending] = useState(false);
   const chatBottomRef = useRef(null);
+  // Confirm delete modal state
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+  const [eventIdToDelete, setEventIdToDelete] = useState(null);
 
   // Fetch chat messages for event/volunteer
   const openChatModal = async (volunteer) => {
@@ -348,28 +352,32 @@ const OrganizationEvents = () => {
   };
   
   const handleDeleteEvent = async (eventId) => {
-    if (window.confirm('Are you sure you want to delete this event?')) {
-      try {
-        const token = localStorage.getItem('token');
-        
-        const response = await fetch(`/api/org/events/${eventId}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        
-        if (!response.ok) {
-          throw new Error('Failed to delete event');
+    setEventIdToDelete(eventId);
+    setShowConfirmDelete(true);
+  };
+
+  const confirmDeleteEvent = async () => {
+    if (!eventIdToDelete) return;
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/org/events/${eventIdToDelete}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
         }
-        
-        // Refresh events list
-        fetchEvents();
-        
-      } catch (error) {
-        console.error('Error deleting event:', error);
-        setError('Failed to delete event. Please try again.');
+      });
+      if (!response.ok) {
+        throw new Error('Failed to delete event');
       }
+      // Refresh events list
+      fetchEvents();
+      setShowConfirmDelete(false);
+      setEventIdToDelete(null);
+    } catch (error) {
+      console.error('Error deleting event:', error);
+      setError('Failed to delete event. Please try again.');
+      setShowConfirmDelete(false);
+      setEventIdToDelete(null);
     }
   };
   
@@ -1405,6 +1413,18 @@ const OrganizationEvents = () => {
           </div>
         )}
         {/* Chat Modal */}
+        <ConfirmModal
+          isOpen={showConfirmDelete}
+          title="Delete Event"
+          message="Are you sure you want to delete this event? This action cannot be undone."
+          confirmText="Delete"
+          cancelText="Cancel"
+          onConfirm={confirmDeleteEvent}
+          onCancel={() => {
+            setShowConfirmDelete(false);
+            setEventIdToDelete(null);
+          }}
+        />
         <ChatModal 
           isOpen={showChatModal}
           onClose={() => setShowChatModal(false)}

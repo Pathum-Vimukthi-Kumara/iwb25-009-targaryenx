@@ -34,7 +34,7 @@ const AdminStats = ({ stats }) => {
         />
         <StatCard 
           title="Total Events" 
-          value={stats.totalEvents || 'N/A'} 
+          value={typeof stats.totalEvents === 'number' ? stats.totalEvents : 'N/A'} 
           icon={<FiCalendar className="w-5 h-5" />}
           color="bg-purple-500" 
         />

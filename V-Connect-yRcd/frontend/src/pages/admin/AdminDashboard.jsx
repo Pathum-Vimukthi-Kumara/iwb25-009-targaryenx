@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import LoadingSpinner from '../../components/LoadingSpinner';
 import { useNavigate } from 'react-router-dom';
 import AdminSidebar from './AdminSidebar';
 import AdminStats from './AdminStats';
@@ -32,35 +33,47 @@ const AdminDashboard = () => {
     setIsLoading(true);
     try {
       const token = localStorage.getItem('token');
-      
+
       // Fetch all users to calculate stats
       const response = await fetch('/api/admin/users', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to fetch users');
       }
-      
+
       const users = await response.json();
-      
+
       // Calculate stats
       const volunteers = users.filter(user => user.user_type === 'volunteer');
       const organizations = users.filter(user => user.user_type === 'organization');
-      
+
       const pendingVolunteers = volunteers.filter(vol => !vol.is_active).length;
       const pendingOrganizations = organizations.filter(org => !org.is_active).length;
-      
+
+      // Fetch all events (public endpoint)
+      let totalEvents = 0;
+      try {
+        const eventsRes = await fetch('/pub/events');
+        if (eventsRes.ok) {
+          const events = await eventsRes.json();
+          totalEvents = Array.isArray(events) ? events.length : 0;
+        }
+      } catch (e) {
+        // If events fetch fails, keep totalEvents as 0
+      }
+
       setStats({
         totalVolunteers: volunteers.length,
         totalOrganizations: organizations.length,
-        totalEvents: 0, // Will need a separate API call to count events
+        totalEvents,
         pendingVolunteers,
         pendingOrganizations
       });
-      
+
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
     } finally {
@@ -74,9 +87,7 @@ const AdminDashboard = () => {
       <h1 className="text-2xl font-semibold text-gray-800 mb-4">Admin Dashboard</h1>
       
       {isLoading ? (
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-        </div>
+        <LoadingSpinner />
       ) : (
         <AdminStats stats={stats} />
       )}

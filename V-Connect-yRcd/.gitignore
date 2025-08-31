@@ -1,0 +1,2 @@
+# Ignore react-toastify package files
+node_modules/react-toastify/
