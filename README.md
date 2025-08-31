@@ -61,8 +61,7 @@ V-Connect is a modern web platform designed to connect volunteers, organizations
 
 ### 1. Clone the Repository
 ```sh
-git clone [https://github.com/Pathum-Vimukthi-Kumara/iwb25-009-targaryenx.git]
-cd VConnect-TargaryenX
+git clone https://github.com/Pathum-Vimukthi-Kumara/iwb25-009-targaryenx.git
 ```
 
 ### 2. Configure the Database
