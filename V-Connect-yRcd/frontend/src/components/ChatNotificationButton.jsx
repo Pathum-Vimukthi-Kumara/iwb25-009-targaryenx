@@ -1,14 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { FiMessageSquare } from 'react-icons/fi';
-import { useWebSocket } from '../contexts/WebSocketContext';
 
-/**
- * ChatNotificationButton - shows a button with unread message count for a volunteer's event chat
- * Props:
- *   eventId: number
- *   volunteerId: number
- *   onClick: function (opens chat modal)
- */
+
 export default function ChatNotificationButton({ eventId, volunteerId, onClick }) {
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);

@@ -1,4 +1,19 @@
-// Handler for delete button
+
+
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { FiX, FiSend, FiTrash2 } from 'react-icons/fi';
+
+const ChatModal = ({ isOpen, onClose, eventId, eventTitle, volunteerId, volunteerName }) => {
+  const [error, setError] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const messagesEndRef = useRef(null);
+
+
+// Handler for delete 
+
+
 function handleDeleteMessage(messageId) {
   deleteMessage(messageId);
 }
@@ -27,8 +42,6 @@ function formatTime(dateString) {
   return `${hours}:${minutes}`;
 }
 
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { FiX, FiSend, FiTrash2 } from 'react-icons/fi';
 
   // Delete message handler
   const deleteMessage = async (messageId) => {
@@ -47,13 +60,6 @@ import { FiX, FiSend, FiTrash2 } from 'react-icons/fi';
       // Optionally show error
     }
   };
-
-const ChatModal = ({ isOpen, onClose, eventId, eventTitle, volunteerId, volunteerName }) => {
-  const [error, setError] = useState(null);
-  const [messages, setMessages] = useState([]);
-  const [newMessage, setNewMessage] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const messagesEndRef = useRef(null);
 
   
   // Get current user info from token

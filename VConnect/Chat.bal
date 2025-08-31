@@ -12,7 +12,6 @@ type ChatMessage record {
     string created_at;
 };
 
-// Get private chat messages between organization and specific volunteer
 function getPrivateChatMessages(int eventId, int volunteerId) returns ChatMessage[]|error {
     ChatMessage[] messages = [];
     

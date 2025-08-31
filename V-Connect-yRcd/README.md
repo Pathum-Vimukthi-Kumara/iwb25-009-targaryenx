@@ -16,131 +16,133 @@ This document provides backend developers with the details needed to build fully
 
 ## 📂 Project Structure  
 
-frontend/
-├── src/
-│ ├── components/ # Reusable UI components
-│ ├── pages/ # Page components
-│ │ ├── admin/ # Admin-specific pages
-│ │ ├── organization/ # Organization-specific pages
-│ │ └── volunteer/ # Volunteer-specific pages
-│ ├── services/ # API and mock data services
-│ ├── utils/ # Utility functions
-│ ├── App.js # Application root
-│ └── index.js # Entry point
-└── public/ # Static assets
 
 
-## 🔑 Required API Endpoints  
+# V-Connect Platform
 
-### Authentication  
+## Overview
 
-| Endpoint        | Method | Description          | Request Body                     | Response               |
-|-----------------|--------|----------------------|----------------------------------|------------------------|
-| `/auth/login`   | POST   | User login           | `{ email, password, userType }`  | `{ token, user }`      |
-| `/auth/register`| POST   | User registration    | User details (role-based)        | `{ success, message }` |
-| `/auth/refresh` | POST   | Refresh auth token   | `{ refreshToken }`               | `{ token }`            |
-
-### Events  
-
-| Endpoint                  | Method | Description |
-|---------------------------|--------|-------------|
-| `/events`                 | GET    | List events (filters: `status`, `page`, `limit`, `search`) |
-| `/events`                 | POST   | Create event |
-| `/events/:id`             | GET    | Get event details |
-| `/events/:id`             | PUT    | Update event |
-| `/events/:id/applications`| GET    | List applications for event |
-
-### Volunteers  
-
-| Endpoint             | Method | Description |
-|----------------------|--------|-------------|
-| `/volunteers`        | GET    | List volunteers (`search`, `page`, `limit`) |
-| `/volunteers/:id`    | GET    | Get volunteer details (skills, badges) |
-| `/volunteers/:id`    | PUT    | Update volunteer details |
-| `/volunteers/:id/events` | GET | Get volunteer’s events (by status) |
-
-### Applications  
-
-| Endpoint           | Method | Description |
-|--------------------|--------|-------------|
-| `/applications`    | GET    | List applications (`status`, `eventId`, `volunteerId`) |
-| `/applications`    | POST   | Create application `{ eventId, volunteerId, message }` |
-| `/applications/:id`| PUT    | Update application status `{ status, message }` |
-
-### Organizations  
-
-| Endpoint                 | Method | Description |
-|--------------------------|--------|-------------|
-| `/organizations`         | GET    | List organizations (`search`, `page`, `limit`) |
-| `/organizations/:id`     | GET    | Get organization details |
-| `/organizations/:id`     | PUT    | Update organization |
-| `/organizations/:id/events` | GET | Get organization’s events |
-
-### Badges  
-
-| Endpoint            | Method | Description |
-|---------------------|--------|-------------|
-| `/badges`           | GET    | List badges (`search`, `page`, `limit`) |
-| `/badges`           | POST   | Create badge |
-| `/badges/:id`       | GET    | Get badge details |
-| `/badges/:id`       | PUT    | Update badge |
-| `/badges/:id/award` | POST   | Award badge to volunteers `{ volunteerIds: [] }` |
-
-### Admin Dashboard  
-
-| Endpoint                          | Method | Description |
-|-----------------------------------|--------|-------------|
-| `/admin/dashboard/stats`          | GET    | Get dashboard stats (`timeRange`) |
-| `/admin/dashboard/top-volunteers` | GET    | Get top volunteers (`limit`) |
-| `/admin/dashboard/popular-skills` | GET    | Get popular skills (`limit`) |
-| `/admin/dashboard/monthly-activity` | GET  | Get monthly activity (`year`) |
+V-Connect is a modern web platform designed to connect volunteers, organizations, and administrators for event management, communication, and collaboration. The backend is built using **Ballerina**, a cloud-native programming language optimized for integration, APIs, and distributed systems.
 
 ---
 
-## 📌 Pages & API Dependencies  
+## Architecture
 
-### **Admin Pages**  
-- **AdminDashboard.jsx** → `/admin/dashboard/*` endpoints  
-- **BadgeManagement.jsx** → `/badges` (CRUD), `/badges/:id/award`, `/volunteers` (search)  
+### High-Level Architecture
 
-### **Organization Pages**  
-- **EventManagement.jsx** → `/events` (CRUD), `/events/:id/applications`  
-- **OrganizationProfile.jsx** → `/organizations/:id` (GET/PUT), file upload for media  
-- **VolunteerApplications.jsx** → `/applications`, `/applications/:id`, `/volunteers/:id`  
+- **Frontend:** React (Vite) SPA for volunteers, organizations, and admin dashboards.
+- **Backend:** Ballerina microservices exposing RESTful APIs for authentication, chat, events, applications, donations, feedback, and more.
+- **Database:** SQL-based persistent storage (accessed via Ballerina’s SQL module).
+- **Authentication:** JWT-based authentication and authorization for secure access.
+- **Deployment:** Easily containerized and deployable on any cloud or on-premises infrastructure.
 
-### **Volunteer Pages**  
-- **VolunteerEvents.jsx** → `/events` (GET with filters), `/applications` (POST)  
+### Service Structure
+
+- `/api/org` — Organization management (profiles, events, applications, donations, feedback)
+- `/api/vol` — Volunteer management (applications, badges, rankings)
+- `/api/volunteers` — Volunteer profile and badge endpoints
+- `/api/admin` — Admin-only endpoints (user management, badge awarding, event contributions)
+- `/api/chat` — Event and private chat between organizations and volunteers
+- `/api/auth` — Registration and login
+- `/api/contact` — Contact and support messages
+- `/pub` — Public endpoints (events, organizations, feedback, donations)
+- `/uploads` — Static file serving for uploaded images
+
+---
+
+## Tech Stack
+
+### Frontend
+- **React** (Vite)
+- **Tailwind CSS**
+- **React Icons**
+- **Axios**
+- **React Router**
+
+### Backend
+- **Ballerina** (RESTful APIs, JWT, SQL, HTTP, MIME, IO, Time)
+
+### Database
+- **SQL Database** (MySQL, PostgreSQL, or SQLite)
+
+---
+
+## Prerequisites
+
+- [Node.js & npm](https://nodejs.org/)
+- [Ballerina](https://ballerina.io/downloads/)
+- SQL database (e.g., MySQL, PostgreSQL, or SQLite)
+
+---
+
+## Setup Instructions
+
+### 1. Clone the Repository
+```sh
+git clone https://github.com/Pathum-Vimukthi-Kumara/VConnect-TargaryenX.git
+cd VConnect-TargaryenX
+```
+
+### 2. Configure the Database
+- Set up your SQL database (MySQL, PostgreSQL, or SQLite).
+- Update the database connection details in the Ballerina backend code (see `Config.toml` or relevant config section).
+
+### 3. Backend Setup (Ballerina)
+```sh
+cd VConnect
+bal build
+bal run
+```
+- The backend will start on [http://localhost:9000](http://localhost:9000)
+
+### 4. Frontend Setup (React)
+```sh
+cd V-Connect-yRcd/frontend
+npm install
+npm run dev
+```
+- The frontend will start on [http://localhost:5173](http://localhost:5173)
+
+---
+
+## Usage
+- Open your browser and go to [http://localhost:5173](http://localhost:5173)
+- Register as a volunteer, organization, or admin.
+- Explore event management, chat, applications, donations, and more.
+
+---
+
+## Advantages & Architecture
+- **Separation of Concerns:** Modular backend services for org, volunteer, admin, chat, etc.
+- **JWT Authentication:** Secure, role-based access for all APIs.
+- **Declarative HTTP APIs:** Ballerina's service/resource model for clean REST endpoints.
+- **Cloud-Native Ready:** Easy to containerize and deploy.
+- **Efficient Resource Usage:** No polling; HTTP-based chat and notifications.
+
+---
+
+## Ballerina Usage Highlights
+- **JWT Authentication** for all protected endpoints.
+- **SQL Integration** for persistent storage.
+- **CORS Management** for secure cross-origin requests.
+- **Static File Serving** for uploads.
+- **Error Handling** with meaningful HTTP status codes.
+
+---
+
+## Contributing
+Pull requests are welcome! For major changes, please open an issue first to discuss what you would like to change.
+
+---
+
+## License
+[MIT](LICENSE)
+
+---
+
+## API Documentation
+
+For a complete list of API endpoints and request/response examples, see our interactive Postman documentation:
+
+👉 [V-Connect API Documentation (Postman)](https://documenter.getpostman.com/view/40284138/2sB3BGJAME)
 - **VolunteerProfile.jsx** → `/volunteers/:id` (GET/PUT), badges & skills, profile image upload  
-
----
-
-## 🎯 Components with Backend Integration Needs  
-
-- **High Priority:**  
-  - `EventManagement.jsx` – Event CRUD + Applications  
-  - `VolunteerEvents.jsx` – Event discovery + Apply to events  
-  - `BadgeManagement.jsx` – Badge CRUD + Award system  
-  - `VolunteerApplications.jsx` – Manage applications  
-
-- **Medium Priority:**  
-  - `VolunteerProfile.jsx` – Profile info, skills, badges  
-  - `OrganizationProfile.jsx` – Org info + media  
-  - `AdminDashboard.jsx` – Statistics + Analytics  
-
-- **No Backend Needed:**  
-  - `Modal.jsx`, `Loading.jsx`, `FormElements.jsx`, `EmptyState.jsx`, `Pagination.jsx` (UI only)  
-
----
-
-## 📎 File Upload Support  
-
-- **FileUpload.jsx** component requires backend endpoints for:  
-  - **Profile images (volunteers)**  
-  - **Logos and cover images (organizations)**  
-  - **Badge icons**  
-
-Expected: `multipart/form-data` handling with image preview support.  
-
----
-
-✅ This README ensures backend developers can build API endpoints that align perfectly with the V-Co
