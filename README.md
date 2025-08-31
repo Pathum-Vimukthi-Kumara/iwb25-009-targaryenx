@@ -116,7 +116,9 @@ npm run dev
 Pull requests are welcome! For major changes, please open an issue first to discuss what you would like to change.
 
 ---
+## API Documentation
 
-## License
-[MIT](LICENSE)
-- **VolunteerProfile.jsx** → `/volunteers/:id` (GET/PUT), badges & skills, profile image upload  
+For a complete list of API endpoints and request/response examples, see our interactive Postman documentation:
+
+👉 [V-Connect API Documentation (Postman)](https://documenter.getpostman.com/view/40284138/2sB3BGJAME)
+
