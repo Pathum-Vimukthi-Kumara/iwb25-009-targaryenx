@@ -34,6 +34,7 @@ const DashboardLayout = ({ children, userType = 'volunteer' }) => {
             label: 'Dashboard',
             description: 'View available events and opportunities'
           },
+          
           { 
             path: '/volunteer-events', 
             icon: <FiCalendar size={20} />, 

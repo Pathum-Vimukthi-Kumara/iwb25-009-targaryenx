@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiCalendar, FiClock, FiMapPin, FiUsers, FiAlertCircle, FiX, FiSearch } from 'react-icons/fi';
 import DashboardLayout from './DashboardLayout';
@@ -14,7 +13,8 @@ const VolunteerAllEvents = () => {
   const [error, setError] = useState(null);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [showModal, setShowModal] = useState(false);
-  
+  const [showAll, setShowAll] = useState(false); // NEW state for view all
+
   useEffect(() => {
     const fetchEventsAndApplications = async () => {
       setIsLoading(true);
@@ -27,6 +27,7 @@ const VolunteerAllEvents = () => {
         });
         if (!eventsRes.ok) throw new Error('Failed to fetch events');
         const eventsData = await eventsRes.json();
+
         // Fetch my applications
         const appsRes = await fetch('http://localhost:9000/api/vol/applications', {
           headers: { 'Authorization': `Bearer ${token}` }
@@ -36,6 +37,7 @@ const VolunteerAllEvents = () => {
           appsData = await appsRes.json();
         }
         setApplications(appsData);
+
         // Fetch organizations
         let organizations = [];
         try {
@@ -46,7 +48,7 @@ const VolunteerAllEvents = () => {
         } catch (e) {
           console.log('Failed to fetch organizations:', e);
         }
-        
+
         // Mark events as applied and add organization names
         const appliedEventIds = new Set(appsData.map(app => app.event_id));
         const mergedEvents = eventsData.map(event => {
@@ -67,7 +69,7 @@ const VolunteerAllEvents = () => {
     };
     fetchEventsAndApplications();
   }, []);
-  
+
   // Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -78,7 +80,7 @@ const VolunteerAllEvents = () => {
       }
     }
   };
-  
+
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: {
@@ -113,8 +115,9 @@ const VolunteerAllEvents = () => {
       );
       setFilteredEvents(filtered);
     }
+    setShowAll(false); // Reset to limited view when searching
   };
-  
+
   // Function to show event details
   const showEventDetails = (event) => {
     setSelectedEvent(event);
@@ -168,6 +171,9 @@ const VolunteerAllEvents = () => {
     }
   };
 
+  // Decide how many events to display
+  const displayedEvents = showAll ? filteredEvents : filteredEvents.slice(0, 6);
+
   return (
     <DashboardLayout userType="volunteer">
       <div className="mb-8">
@@ -202,79 +208,93 @@ const VolunteerAllEvents = () => {
           </p>
         </div>
       ) : (
-        <motion.div 
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          {filteredEvents.map((event) => (
-            <motion.div 
-              key={event.event_id} 
-              className="bg-white rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200"
-              variants={itemVariants}
-              whileHover={{ y: -2, transition: { duration: 0.2 } }}
-            >
-              <div className="p-6">
-                <div className="flex justify-between items-start mb-3">
-                  <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">{event.title}</h3>
-                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                    event.status === 'active' ? 'bg-green-100 text-green-700' : 
-                    event.status === 'completed' ? 'bg-gray-100 text-gray-700' :
-                    'bg-blue-100 text-blue-700'
-                  }`}>
-                    {event.status}
-                  </span>
-                </div>
-                
-                <p className="text-gray-600 text-sm mb-4 line-clamp-2">{event.description}</p>
-                
-                <div className="space-y-3 mb-5">
-                  <div className="flex items-center text-sm text-gray-600">
-                    <FiCalendar className="text-gray-400 mr-3" size={16} />
-                    <span className="font-medium">{formatDate(event.event_date)}</span>
+        <>
+          <motion.div 
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            {displayedEvents.map((event) => (
+              <motion.div 
+                key={event.event_id} 
+                className="bg-white rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200"
+                variants={itemVariants}
+                whileHover={{ y: -2, transition: { duration: 0.2 } }}
+              >
+                <div className="p-6">
+                  <div className="flex justify-between items-start mb-3">
+                    <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">{event.title}</h3>
+                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                      event.status === 'active' ? 'bg-green-100 text-green-700' : 
+                      event.status === 'completed' ? 'bg-gray-100 text-gray-700' :
+                      'bg-blue-100 text-blue-700'
+                    }`}>
+                      {event.status}
+                    </span>
                   </div>
                   
-                  <div className="flex items-center text-sm text-gray-600">
-                    <FiMapPin className="text-gray-400 mr-3" size={16} />
-                    <span className="truncate">{event.location}</span>
-                  </div>
+                  <p className="text-gray-600 text-sm mb-4 line-clamp-2">{event.description}</p>
                   
-                  <div className="flex items-center text-sm text-gray-600">
-                    <FiUsers className="text-gray-400 mr-3" size={16} />
-                    <span>{event.required_volunteers} volunteers needed</span>
-                  </div>
-                  
-                  <div className="flex items-center text-sm text-gray-600">
-                    <FiUsers className="text-gray-400 mr-3" size={16} />
-                    <span className="truncate">By: {event.organization_name}</span>
-                  </div>
-                </div>
-                
-                <div className="flex gap-2 pt-4 border-t border-gray-100">
-                  <button
-                    onClick={() => showEventDetails(event)}
-                    className="flex-1 bg-primary/10 text-primary hover:bg-primary/20 px-4 py-2 rounded-lg transition-colors text-sm font-medium"
-                  >
-                    View Details
-                  </button>
-                  {event.has_applied ? (
-                    <div className="flex-1 bg-green-50 text-green-700 px-4 py-2 rounded-md text-center text-sm font-medium">
-                      ✓ Applied
+                  <div className="space-y-3 mb-5">
+                    <div className="flex items-center text-sm text-gray-600">
+                      <FiCalendar className="text-gray-400 mr-3" size={16} />
+                      <span className="font-medium">{formatDate(event.event_date)}</span>
                     </div>
-                  ) : (
+                    
+                    <div className="flex items-center text-sm text-gray-600">
+                      <FiMapPin className="text-gray-400 mr-3" size={16} />
+                      <span className="truncate">{event.location}</span>
+                    </div>
+                    
+                    <div className="flex items-center text-sm text-gray-600">
+                      <FiUsers className="text-gray-400 mr-3" size={16} />
+                      <span>{event.required_volunteers} volunteers needed</span>
+                    </div>
+                    
+                    <div className="flex items-center text-sm text-gray-600">
+                      <FiUsers className="text-gray-400 mr-3" size={16} />
+                      <span className="truncate">By: {event.organization_name}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-2 pt-4 border-t border-gray-100">
                     <button
-                      onClick={() => handleApplyToEvent(event.event_id)}
-                      className="flex-1 bg-primary text-white px-4 py-2 rounded-md hover:bg-primary/90 transition-colors text-sm font-medium"
+                      onClick={() => showEventDetails(event)}
+                      className="flex-1 bg-primary/10 text-primary hover:bg-primary/20 px-4 py-2 rounded-lg transition-colors text-sm font-medium"
                     >
-                      Apply Now
+                      View Details
                     </button>
-                  )}
+                    {event.has_applied ? (
+                      <div className="flex-1 bg-green-50 text-green-700 px-4 py-2 rounded-md text-center text-sm font-medium">
+                        ✓ Applied
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => handleApplyToEvent(event.event_id)}
+                        className="flex-1 bg-primary text-white px-4 py-2 rounded-md hover:bg-primary/90 transition-colors text-sm font-medium"
+                      >
+                        Apply Now
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </motion.div>
-          ))}
-        </motion.div>
+              </motion.div>
+            ))}
+          </motion.div>
+
+          {/* View All Button */}
+          {!showAll && filteredEvents.length > 6 && (
+            <div className="flex justify-end mt-6">
+              <p
+                onClick={() => setShowAll(true)}
+                className="text-primary cursor-pointer hover:underline"
+              >
+                View All
+              </p>
+            </div>
+          )}
+        </>
       )}
 
       {/* Event Details Modal */}
@@ -368,6 +388,7 @@ const VolunteerAllEvents = () => {
           </motion.div>
         )}
       </AnimatePresence>
+    
     </DashboardLayout>
   );
 };

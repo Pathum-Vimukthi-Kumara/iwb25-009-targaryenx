@@ -5,18 +5,17 @@ type ChatMessage record {
     int id;
     int event_id;
     int user_id;
-    int? recipient_id; // null for public messages, specific user_id for private
+    int? recipient_id; 
     string message;
     string sender_type;
     string? sender_name;
     string created_at;
 };
 
-// Get private chat messages between organization and specific volunteer
-function getPrivateChatMessages(int eventId, int volunteerId) returns ChatMessage[]|error {
+
+function getVolunteerChatMessages(int eventId, int volunteerId) returns ChatMessage[]|error {
     ChatMessage[] messages = [];
     
-    // Get organization ID for this event
     stream<record {|int org_id;|}, sql:Error?> orgStream = dbClient->query(`
         SELECT organization_id as org_id FROM events WHERE event_id = ${eventId}`);
     record {|record {|int org_id;|} value;|}|sql:Error? orgRow = orgStream.next();
@@ -29,7 +28,7 @@ function getPrivateChatMessages(int eventId, int volunteerId) returns ChatMessag
         return error("Event not found");
     }
     
-    // Query for ONLY messages between this volunteer and the org for this event
+    
     stream<record {| 
         int id;
         int event_id;
@@ -81,9 +80,7 @@ function getPrivateChatMessages(int eventId, int volunteerId) returns ChatMessag
     
     return messages;
 }
-
-// Get public chat messages (non-private messages)
-function getChatMessages(int eventId) returns ChatMessage[]|error {
+function getOrganizationChatMessages(int eventId) returns ChatMessage[]|error {
     ChatMessage[] messages = [];
     stream<record {|
         int id;
@@ -129,15 +126,12 @@ function getChatMessages(int eventId) returns ChatMessage[]|error {
     return messages;
 }
 
-// Post private message to specific volunteer
-function postPrivateChatMessage(int eventId, int senderId, int recipientId, string message) returns error? {
+function postPrivateChatMessagesToVolunteer(int eventId, int senderId, int recipientId, string message) returns error? {
     _ = check dbClient->execute(`
         INSERT INTO event_chat_messages (event_id, user_id, recipient_id, message, is_private) 
         VALUES (${eventId}, ${senderId}, ${recipientId}, ${message}, 1)`);
 }
-
-// Post public message
-function postChatMessage(int eventId, int userId, string message) returns error? {
+function postPrivateChatMessagesToOrganization(int eventId, int userId, string message) returns error? {
     _ = check dbClient->execute(`
         INSERT INTO event_chat_messages (event_id, user_id, message, is_private) 
         VALUES (${eventId}, ${userId}, ${message}, 0)`);

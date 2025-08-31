@@ -1,4 +1,3 @@
-
 import ballerina/http;
 import ballerina/io;
 import ballerina/jwt;
@@ -8,19 +7,12 @@ import ballerina/sql;
 import ballerina/time;
 
 
-
-
-
-
-
-// Shared validator config (HS256) matching the issuer side in generateJwt()
 final jwt:ValidatorConfig validatorConfig = {
     audience: "VConnectClient",
     issuer: "VConnectAPI",
-    // For HS256 validation just provide the shared secret
     signatureConfig: {secret: JWT_SECRET}
 };
-
+// jwt validation function
 function validateAuth(http:Request req) returns error? {
     string authHeader = check req.getHeader("Authorization");
     if !authHeader.startsWith("Bearer ") {
@@ -34,7 +26,7 @@ function validateAuth(http:Request req) returns error? {
     return ();
 }
 
-// Ensure caller is the target organization (matching orgId) or an admin.
+// Ensure the users 
 function ensureOrgOrAdmin(http:Request req, int orgId) returns error? {
     string authHeader = check req.getHeader("Authorization");
     if !authHeader.startsWith("Bearer ") {
@@ -74,18 +66,19 @@ listener http:Listener mainListener = new (9000);
 
 @http:ServiceConfig {
     cors: {
-        // must be a specific origin if credentials are allowed
+
         allowOrigins: ["http://localhost:5173", "http://localhost:5174"],
         allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-        // list the exact headers your frontend sends
         allowHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
         allowCredentials: true,
         maxAge: 86400,
         exposeHeaders: ["Location", "Content-Length"]
     }
 }
+
+// Organization Services 
+
 service /api/org on mainListener {
-    // Handle OPTIONS preflight requests
     resource function options .(http:Caller caller, http:Request req) returns error? {
         http:Response response = new;
         response.setHeader("Access-Control-Allow-Origin", "*");
@@ -94,7 +87,7 @@ service /api/org on mainListener {
         response.statusCode = http:STATUS_NO_CONTENT;
         return caller->respond(response);
     }
-    // Organization updates the status of a volunteer's application for their event
+
     resource function patch events/[int event_id]/applications/[int application_id]/status(http:Caller caller, http:Request req) returns error? {
         error? vErr = validateAuth(req);
         if vErr is error {
@@ -103,7 +96,6 @@ service /api/org on mainListener {
             r.setJsonPayload({"error": vErr.message()});
             return caller->respond(r);
         }
-        // Check that the caller is the organization that owns the event or admin
         int owningOrg = -1;
         {
             stream<record {|int oid;|}, sql:Error?> es = dbClient->query(`SELECT organization_id AS oid FROM events WHERE event_id = ${event_id}`);
@@ -183,7 +175,7 @@ service /api/org on mainListener {
             r.setJsonPayload({"error": "Invalid organization ID"});
             return caller->respond(r);
         }
-        
+
         error? vErr = validateAuth(req);
         if vErr is error {
             http:Response r = new;
@@ -198,7 +190,6 @@ service /api/org on mainListener {
             r.setJsonPayload({"error": (<error>ownErr).message()});
             return caller->respond(r);
         }
-        // Auto-create if missing
         OrgProfile|error p = ensureOrgProfile(id);
         if p is OrgProfile {
             OrgEvent[] evts = [];
@@ -231,7 +222,6 @@ service /api/org on mainListener {
             r.setJsonPayload({"error": vErr.message()});
             return caller->respond(r);
         }
-        // body.organization_id MUST match caller org id unless caller is admin
         if body.organization_id is int {
             error? ownErr = ensureOrgOrAdmin(req, <int>body.organization_id);
             if ownErr is error {
@@ -270,9 +260,8 @@ service /api/org on mainListener {
         check caller->respond({message: updated});
     }
 
-    // Convenience: get my own organization profile using token (no id guesswork) with auto-create
+   
     resource function get profile/self(http:Caller caller, http:Request req) returns error? {
-        // Validate token & extract org id
         string authHeader = "";
         {
             string|error h = req.getHeader("Authorization");
@@ -406,7 +395,6 @@ service /api/org on mainListener {
         check caller->respond({message: msg});
     }
 
-    // Handle volunteer application to events
     resource function post events/[int event_id]/apply(http:Caller caller, http:Request req) returns error? {
         error? vErr = validateAuth(req);
         if vErr is error {
@@ -415,7 +403,6 @@ service /api/org on mainListener {
             r.setJsonPayload({"error": vErr.message()});
             return caller->respond(r);
         }
-        // Extract volunteer ID from token
         string authHeader = check req.getHeader("Authorization");
         string token = authHeader.substring(7);
         jwt:Payload payload = check jwt:validate(token, validatorConfig);
@@ -457,7 +444,6 @@ service /api/org on mainListener {
         check caller->respond(donations);
     }
 
-    // Donation Requests
     resource function post donation_requests(DonationRequest body, http:Caller caller, http:Request req) returns error? {
         error? vErr = validateAuth(req);
         if vErr is error {
@@ -545,8 +531,6 @@ service /api/org on mainListener {
         return caller->respond(r);
     }
 
-    // Feedback
-    // Feedback
     resource function post feedback(Feedback body, http:Caller caller, http:Request req) returns error? {
         error? vErr = validateAuth(req);
         if vErr is error {
@@ -675,9 +659,7 @@ service /api/org on mainListener {
         return caller->respond(r);
     }
 
-    // List applications for an event (organization view)
     resource function get events/[int event_id]/applications(http:Caller caller, http:Request req) returns error? {
-        // Auth then ensure caller is owning organization of the event OR admin
         error? vErr = validateAuth(req);
         if vErr is error {
             http:Response r = new;
@@ -685,7 +667,6 @@ service /api/org on mainListener {
             r.setJsonPayload({"error": vErr.message()});
             return caller->respond(r);
         }
-        // Fetch event's organization_id
         int owningOrg = -1;
         {
             stream<record {|int oid;|}, sql:Error?> es = dbClient->query(`SELECT organization_id AS oid FROM events WHERE event_id = ${event_id}`);
@@ -704,7 +685,6 @@ service /api/org on mainListener {
                 return caller->respond(r);
             }
         }
-        // Extract token to check role/org
         string authHeader = "";
         {
             string|error h = req.getHeader("Authorization");
@@ -751,10 +731,10 @@ service /api/org on mainListener {
         return caller->respond(list);
     }
 
-    // Badge CRUD via organization removed; badges now awarded automatically or via admin endpoints.
+   
 }
 
-// Volunteer self-service (authenticated volunteer can view own badges)
+
 
 @http:ServiceConfig {
     cors: {
@@ -763,6 +743,8 @@ service /api/org on mainListener {
         allowHeaders: ["Content-Type", "Authorization"]
     }
 }
+
+// volunteer services
 
 service /api/vol on mainListener {
     resource function get badges(http:Caller caller, http:Request req) returns error? {
@@ -781,7 +763,6 @@ service /api/vol on mainListener {
             r.setJsonPayload({"error": val.message()});
             return caller->respond(r);
         }
-        // Access custom claims directly from payload rest fields
         jwt:Payload payload = <jwt:Payload>val;
         anydata? uidJson = payload["user_id"];
         anydata? typeJson = payload["user_type"];
@@ -814,7 +795,7 @@ service /api/vol on mainListener {
         return caller->respond(list);
     }
 
-    // Volunteer applies to an event (must be active). Table 'event_applications' assumed with columns (application_id auto?, volunteer_id, event_id, applied_at default CURRENT_TIMESTAMP)
+
     resource function post events/[int event_id]/apply(http:Caller caller, http:Request req) returns error? {
         string authHeader = check req.getHeader("Authorization");
         if !authHeader.startsWith("Bearer ") {
@@ -859,7 +840,7 @@ service /api/vol on mainListener {
             r.setJsonPayload({"error": "Unsupported user_id claim type"});
             return caller->respond(r);
         }
-        // Check volunteer active
+        
         stream<record {|boolean? is_active;|}, sql:Error?> vs = dbClient->query(`SELECT is_active FROM users WHERE user_id = ${vid}`);
         record {|record {|boolean? is_active;|} value;|}|sql:Error? vn = vs.next();
         sql:Error? vClose = vs.close();
@@ -879,7 +860,6 @@ service /api/vol on mainListener {
             r.setJsonPayload({"error": "Volunteer inactive"});
             return caller->respond(r);
         }
-        // Check event exists
         stream<record {|int eid;|}, sql:Error?> es = dbClient->query(`SELECT event_id as eid FROM events WHERE event_id = ${event_id}`);
         record {|record {|int eid;|} value;|}|sql:Error? en = es.next();
         sql:Error? eClose = es.close();
@@ -892,7 +872,6 @@ service /api/vol on mainListener {
             r.setJsonPayload({"error": "Event not found"});
             return caller->respond(r);
         }
-        // Create or fetch existing application and return it
         EventApplication|error app = createEventApplication(vid, event_id);
         if app is EventApplication {
             return caller->respond(app);
@@ -900,7 +879,6 @@ service /api/vol on mainListener {
         error e = <error>app;
         string msg = e.message();
         string detailed = msg;
-        // e.detail() returns a readonly map; just attempt to read common key names safely
         anydata d = <anydata>e.detail();
         if d is map<anydata> {
             anydata? dm = d["message"];
@@ -917,8 +895,6 @@ service /api/vol on mainListener {
         r.setJsonPayload({"error": detailed});
         return caller->respond(r);
     }
-
-    // List my event applications
     resource function get applications(http:Caller caller, http:Request req) returns error? {
         string authHeader = check req.getHeader("Authorization");
         if !authHeader.startsWith("Bearer ") {
@@ -956,7 +932,6 @@ service /api/vol on mainListener {
         return caller->respond(list);
     }
 
-    // Withdraw my application for an event
     resource function delete events/[int event_id]/apply(http:Caller caller, http:Request req) returns error? {
         string authHeader = check req.getHeader("Authorization");
         if !authHeader.startsWith("Bearer ") {
@@ -1008,9 +983,10 @@ service /api/vol on mainListener {
         allowHeaders: ["Content-Type", "Authorization"]
     }
 }
-// Public volunteer profile + ranking (shares same module globals; add auth later if needed)
+
+// volunteer profile, Badges, Ranking
 service /api/volunteers on mainListener {
-    // Get volunteer profile
+   
     resource function get [int id](http:Caller caller, http:Request req) returns error? {
         if id <= 0 {
             http:Response r = new;
@@ -1018,8 +994,6 @@ service /api/volunteers on mainListener {
             r.setJsonPayload({"error": "Invalid volunteer ID"});
             return caller->respond(r);
         }
-        
-        // Require token and ownership
         string authHeader = "";
         {
             string|error h = req.getHeader("Authorization");
@@ -1070,7 +1044,6 @@ service /api/volunteers on mainListener {
         return caller->respond(r);
     }
 
-    // Update volunteer profile (bio, skills) - no auth yet
     resource function put [int id](VolunteerProfileUpdate upd, http:Caller caller, http:Request req) returns error? {
         string authHeader = "";
         {
@@ -1112,7 +1085,7 @@ service /api/volunteers on mainListener {
             return caller->respond(r);
         }
 
-        VolunteerProfile|error p = upsertVolunteerProfile(id, upd);
+        VolunteerProfile|error p = updateVolunteerProfile(id, upd);
         if p is VolunteerProfile {
             return caller->respond(p);
         }
@@ -1125,7 +1098,6 @@ service /api/volunteers on mainListener {
         return caller->respond(r);
     }
 
-    // Volunteer badges
     resource function get [int id]/badges(http:Caller caller, http:Request req) returns error? {
         string authHeader = "";
         {
@@ -1177,7 +1149,6 @@ service /api/volunteers on mainListener {
         return caller->respond(list);
     }
 
-    // Ranking
     resource function get top(http:Caller caller, http:Request req) returns error? {
         string byParam = req.getQueryParamValue("by") ?: "hours";
         if byParam != "hours" && byParam != "rating" {
@@ -1195,7 +1166,6 @@ service /api/volunteers on mainListener {
 }
 
 // Admin service (user_type must be admin)
-// Helper to extract and validate admin token, returning admin user id or error
 function ensureAdmin(http:Request req) returns int|error {
     string authHeader = check req.getHeader("Authorization");
     if !authHeader.startsWith("Bearer ") {
@@ -1225,8 +1195,9 @@ function ensureAdmin(http:Request req) returns int|error {
     return error("BadToken", message = "Unsupported user_id claim type");
 }
 
-//---------------------------------------------------------------------
-//admin
+
+
+// Admin services
 
 @http:ServiceConfig {
     cors: {
@@ -1296,7 +1267,6 @@ service /api/admin on mainListener {
         return caller->respond(list);
     }
 
-    // Admin awarding badge (awarded_by automatically set to admin id)
     resource function post badges(BadgeCreate body, http:Caller caller, http:Request req) returns error? {
         int|error adm = ensureAdmin(req);
         if adm is error {
@@ -1323,9 +1293,8 @@ service /api/admin on mainListener {
         return caller->respond(r);
     }
 
-    // Recalculate and award performance badges automatically for a volunteer
+  
     resource function post volunteers/[int volunteer_id]/performance_badges(http:Caller caller, http:Request req) returns error? {
-        // Step 1: Ensure the caller is admin
         int|error adm = ensureAdmin(req);
         if adm is error {
             http:Response r = new;
@@ -1335,7 +1304,6 @@ service /api/admin on mainListener {
         }
         int adminId = <int>adm;
 
-        // Step 2: Check volunteer exists
         stream<record {|int vid;|}, sql:Error?> vs = dbClient->query(
         `SELECT user_id AS vid FROM users WHERE user_id = ${volunteer_id} AND user_type = 'volunteer'`
         );
@@ -1348,10 +1316,9 @@ service /api/admin on mainListener {
             return caller->respond(r);
         }
 
-        // Step 3: Get JSON payload
+        
         json payload = check req.getJsonPayload();
 
-        // Ensure payload is a JSON object
         if payload is map<json> {
             BadgeCreate b = {
                 volunteer_id: volunteer_id,
@@ -1360,10 +1327,8 @@ service /api/admin on mainListener {
                 awarded_by: adminId
             };
 
-            // Step 4: Call createBadge
             Badge newBadge = check createBadge(b);
 
-            // Step 5: Respond with the created badge
             return caller->respond(newBadge);
         } else {
             return error("InvalidPayload", message = "Request body must be a JSON object");
@@ -1393,8 +1358,8 @@ service /api/admin on mainListener {
     }
 }
 
-//----------------------------------------------------------------
-// Public badge viewing service
+
+
 @http:ServiceConfig {
     cors: {
         allowOrigins: ["http://localhost:5173", "http://localhost:5174"],
@@ -1402,9 +1367,12 @@ service /api/admin on mainListener {
         allowHeaders: ["Content-Type", "Authorization"]
     }
 }
+
+// public Services 
+
 service /pub on mainListener {
+
     
-    // Handle OPTIONS preflight requests
     resource function options .(http:Caller caller, http:Request req) returns error? {
         http:Response response = new;
         response.setHeader("Access-Control-Allow-Origin", "*");
@@ -1414,9 +1382,8 @@ service /pub on mainListener {
         return caller->respond(response);
     }
 
-    // Public: Get volunteer profile by ID (for orgs to view volunteer details)
+
     resource function get volunteers/[int volunteer_id]/profile(http:Caller caller, http:Request req) returns error? {
-        // Defensive check for volunteer_id
         if volunteer_id <= 0 {
             http:Response r = new;
             r.statusCode = http:STATUS_BAD_REQUEST;
@@ -1432,6 +1399,7 @@ service /pub on mainListener {
         r.setJsonPayload({"error": (<error>profile).message()});
         return caller->respond(r);
     }
+
     resource function get badges/[int badge_id](http:Caller caller, http:Request req) returns error? {
         Badge|error b = getBadge(badge_id);
         if b is Badge {
@@ -1448,7 +1416,6 @@ service /pub on mainListener {
         return caller->respond(list);
     }
 
-    // Public donation requests
     resource function get donation_requests/[int request_id](http:Caller caller, http:Request req) returns error? {
         DonationRequest|error dr = getDonationRequest(request_id);
         if dr is DonationRequest {
@@ -1465,13 +1432,12 @@ service /pub on mainListener {
         return caller->respond(list);
     }
 
-    // Public donations list per organization
     resource function get donations/org/[int organization_id](http:Caller caller, http:Request req) returns error? {
         OrgDonation[] donations = check getOrgDonations(organization_id);
         return caller->respond(donations);
     }
 
-    // get all donation requests
+
     resource function get donation_requests() returns DonationRequest[]|http:InternalServerError {
         DonationRequest[]|error result = getAllDonationRequests();
         if result is error {
@@ -1480,13 +1446,11 @@ service /pub on mainListener {
         return result;
     }
 
-    // Public events
     resource function get events/org/[int organization_id](http:Caller caller, http:Request req) returns error? {
         OrgEvent[] events = check getOrgEvents(organization_id);
         return caller->respond(events);
     }
 
-    // Public: Get all events
     resource function get events(http:Caller caller, http:Request req) returns error? {
         OrgEvent[] events = check getAllEvents();
         return caller->respond(events);
@@ -1503,13 +1467,11 @@ service /pub on mainListener {
         return caller->respond(r);
     }
 
-    // Public feedback for volunteers
     resource function get feedback/volunteer/[int volunteer_id](http:Caller caller, http:Request req) returns error? {
         Feedback[] list = check listFeedbackByVolunteer(volunteer_id);
         return caller->respond(list);
     }
 
-    // P    // Public organizations list
     resource function get organizations(http:Caller caller, http:Request req) returns error? {
         UserSummary[] allUsers = check listAllUsers();
         UserSummary[] orgs = allUsers.filter(function(UserSummary u) returns boolean {
@@ -1518,7 +1480,6 @@ service /pub on mainListener {
         return caller->respond(orgs);
     }
 
-    // Public user data
     resource function get users/[int user_id](http:Caller caller, http:Request req) returns error? {
         UserSummary[] allUsers = check listAllUsers();
         UserSummary? user = ();
@@ -1537,7 +1498,6 @@ service /pub on mainListener {
         return caller->respond(r);
     }
 
-    // Public event contributions
     resource function get events/[int event_id]/contributions(http:Caller caller, http:Request req) returns error? {
         Feedback[] feedbackList = check listFeedbackByEvent(event_id);
 
@@ -1546,7 +1506,8 @@ service /pub on mainListener {
     }
 }
 
-//---------------------------------------------------------------
+//  Auth services 
+
 service /api/auth on mainListener {
     resource function post register(User user, http:Caller caller) returns error? {
         string|error regResult = registerUser(user);
@@ -1572,7 +1533,8 @@ service /api/auth on mainListener {
     }
 }
 
-// Static file server for uploaded images
+// Upload service
+
 service /uploads on mainListener {
     resource function get [string fileName](http:Caller caller) returns error? {
         string filePath = "./uploads/" + fileName;
@@ -1596,6 +1558,9 @@ service /uploads on mainListener {
         allowHeaders: ["Content-Type", "Authorization"]
     }
 }
+
+ //Contact services
+
 service /api/contact on mainListener {
     resource function post message(ContactRequest req, http:Caller caller) returns error? {
         ContactMessage|error result = createContactMessage(req);
@@ -1625,8 +1590,26 @@ service /api/contact on mainListener {
         ContactMessage[] messages = check getAllContactMessages();
         return caller->respond(messages);
     }
-
-    
+    resource function put messages/[int messageId]/read(http:Caller caller, http:Request req) returns error? {
+        error? vErr = validateAuth(req);
+        if vErr is error {
+            return;
+        }
+        ContactMessage|error result = updateContactMessageStatus(messageId, "read");
+        if result is ContactMessage {
+            return caller->respond({message: "Status updated successfully", contact: result});
+        }
+        error e = <error>result;
+        string msg = e.message();
+        int status = http:STATUS_INTERNAL_SERVER_ERROR;
+        if msg.indexOf("not found") >= 0 {
+            status = http:STATUS_NOT_FOUND;
+        }
+        http:Response r = new;
+        r.statusCode = status;
+        r.setJsonPayload({"error": msg});
+        return caller->respond(r);
+    }
     resource function post upload_photo(http:Request request, http:Caller caller) returns error? {
         var bodyParts = request.getBodyParts();
         if (bodyParts is mime:Entity[]) {
@@ -1645,6 +1628,8 @@ service /api/contact on mainListener {
     }
 }
 
+
+
 @http:ServiceConfig {
     cors: {
         allowOrigins: ["http://localhost:5173", "http://localhost:5174"],
@@ -1652,8 +1637,11 @@ service /api/contact on mainListener {
         allowHeaders: ["Content-Type", "Authorization"]
     }
 }
+
+// Chat Application services 
+
 service /api/chat on mainListener {
-    // Handle OPTIONS preflight requests
+    
     resource function options .(http:Caller caller, http:Request req) returns error? {
         http:Response response = new;
         response.setHeader("Access-Control-Allow-Origin", "*");
@@ -1663,7 +1651,6 @@ service /api/chat on mainListener {
         return caller->respond(response);
     }
 
-    // Delete a chat message (only sender, within 15 minutes)
     resource function delete messages/[int id](http:Caller caller, http:Request req) returns error? {
         if id <= 0 {
             http:Response r = new;
@@ -1683,12 +1670,15 @@ service /api/chat on mainListener {
         jwt:Payload jwtPayload = check jwt:validate(token, validatorConfig);
         anydata? userIdJ = jwtPayload["user_id"];
         int userId = -1;
-        if userIdJ is int { userId = userIdJ; }
+        if userIdJ is int {
+            userId = userIdJ;
+        }
         else if userIdJ is string {
             int|error parsed = 'int:fromString(userIdJ);
-            if parsed is int { userId = parsed; }
+            if parsed is int {
+                userId = parsed;
+            }
         }
-        // Fetch message info
         stream<record {|int user_id; string created_at;|}, sql:Error?> msgStream = dbClient->query(`SELECT user_id, created_at FROM event_chat_messages WHERE id = ${id}`);
         record {|record {|int user_id; string created_at;|} value;|}|sql:Error? msgRow = msgStream.next();
         check msgStream.close();
@@ -1699,14 +1689,12 @@ service /api/chat on mainListener {
             return caller->respond(r);
         }
         int senderId = msgRow.value.user_id;
-        // Only sender can delete
         if senderId != userId {
             http:Response r = new;
             r.statusCode = http:STATUS_FORBIDDEN;
             r.setJsonPayload({"error": "You can only delete your own messages"});
             return caller->respond(r);
         }
-        // Delete message
         sql:ExecutionResult|sql:Error result = dbClient->execute(`DELETE FROM event_chat_messages WHERE id = ${id}`);
         if result is sql:Error {
             http:Response r = new;
@@ -1714,12 +1702,8 @@ service /api/chat on mainListener {
             r.setJsonPayload({"error": result.message()});
             return caller->respond(r);
         }
-        
-
-        
         return caller->respond({success: true});
     }
-
 
     resource function get events/[int event_id]/messages(http:Caller caller, http:Request req) returns error? {
         if event_id <= 0 {
@@ -1735,19 +1719,18 @@ service /api/chat on mainListener {
             r.setJsonPayload({"error": vErr.message()});
             return caller->respond(r);
         }
-        ChatMessage[] messages = check getChatMessages(event_id);
+        ChatMessage[] messages = check getOrganizationChatMessages(event_id);
         return caller->respond(messages);
     }
 
-    // New endpoint: Get unread message count for a volunteer in an event chat
-    resource function get events/[int event_id]/messages/unread(http:Caller caller, http:Request req) returns error? {
-        if event_id <= 0 {
+    resource function get events/[int event_id]/messages/volunteer/[int volunteer_id](http:Caller caller, http:Request req) returns error? {
+        if event_id <= 0 || volunteer_id <= 0 {
             http:Response r = new;
             r.statusCode = http:STATUS_BAD_REQUEST;
-            r.setJsonPayload({"error": "Invalid event_id"});
+            r.setJsonPayload({"error": "Invalid event_id or volunteer_id"});
             return caller->respond(r);
         }
-        
+
         error? vErr = validateAuth(req);
         if vErr is error {
             http:Response r = new;
@@ -1756,7 +1739,70 @@ service /api/chat on mainListener {
             return caller->respond(r);
         }
 
-        // Get volunteer_id from query param
+        string authHeader = check req.getHeader("Authorization");
+        string token = authHeader.substring(7);
+        jwt:Payload jwtPayload = check jwt:validate(token, validatorConfig);
+        anydata? userIdJ = jwtPayload["user_id"];
+        anydata? userTypeJ = jwtPayload["user_type"];
+
+        int userId = -1;
+        if userIdJ is int {
+            userId = userIdJ;
+        } else if userIdJ is string {
+            int|error parsed = 'int:fromString(userIdJ);
+            if parsed is int {
+                userId = parsed;
+            }
+        }
+
+        string userType = "";
+        if userTypeJ is string {
+            userType = userTypeJ;
+        }
+        stream<record {|int org_id;|}, sql:Error?> orgStream = dbClient->query(`
+            SELECT organization_id as org_id FROM events WHERE event_id = ${event_id}`);
+        record {|record {|int org_id;|} value;|}|sql:Error? orgRow = orgStream.next();
+        check orgStream.close();
+
+        int eventOrgId = -1;
+        if orgRow is record {|record {|int org_id;|} value;|} {
+            eventOrgId = orgRow.value.org_id;
+        }
+
+        boolean hasAccess = false;
+        if userType == "volunteer" && userId == volunteer_id {
+            hasAccess = true;
+        } else if userType == "organization" && userId == eventOrgId {
+            hasAccess = true;
+        }
+
+        if !hasAccess {
+            http:Response r = new;
+            r.statusCode = http:STATUS_FORBIDDEN;
+            r.setJsonPayload({"error": "Access denied - you can only view your own conversations"});
+            return caller->respond(r);
+        }
+
+        ChatMessage[] messages = check getVolunteerChatMessages(event_id, volunteer_id);
+        return caller->respond(messages);
+    }
+
+    resource function get events/[int event_id]/messages/unread(http:Caller caller, http:Request req) returns error? {
+        if event_id <= 0 {
+            http:Response r = new;
+            r.statusCode = http:STATUS_BAD_REQUEST;
+            r.setJsonPayload({"error": "Invalid event_id"});
+            return caller->respond(r);
+        }
+
+        error? vErr = validateAuth(req);
+        if vErr is error {
+            http:Response r = new;
+            r.statusCode = http:STATUS_UNAUTHORIZED;
+            r.setJsonPayload({"error": vErr.message()});
+            return caller->respond(r);
+        }
+
         string? volunteerIdStr = req.getQueryParamValue("volunteer_id");
         if volunteerIdStr is () {
             http:Response r = new;
@@ -1764,14 +1810,14 @@ service /api/chat on mainListener {
             r.setJsonPayload({"error": "Missing volunteer_id query parameter"});
             return caller->respond(r);
         }
-        
+
         if volunteerIdStr == "null" || volunteerIdStr == "undefined" {
             http:Response r = new;
             r.statusCode = http:STATUS_BAD_REQUEST;
             r.setJsonPayload({"error": "Invalid volunteer_id: null or undefined"});
             return caller->respond(r);
         }
-        
+
         int|error volunteerId = 'int:fromString(volunteerIdStr);
         if volunteerId is error || volunteerId <= 0 {
             http:Response r = new;
@@ -1780,7 +1826,6 @@ service /api/chat on mainListener {
             return caller->respond(r);
         }
 
-        // Query for unread messages for this volunteer in this event
         int unreadCount = 0;
         stream<record {|int cnt;|}, sql:Error?> res = dbClient->query(`
             SELECT COUNT(*) AS cnt 
@@ -1797,87 +1842,14 @@ service /api/chat on mainListener {
         return;
     }
 
-    // Private chat between organization and specific volunteer
-    resource function get events/[int event_id]/messages/volunteer/[int volunteer_id](http:Caller caller, http:Request req) returns error? {
-        // Validate path parameters
-        if event_id <= 0 || volunteer_id <= 0 {
-            http:Response r = new;
-            r.statusCode = http:STATUS_BAD_REQUEST;
-            r.setJsonPayload({"error": "Invalid event_id or volunteer_id"});
-            return caller->respond(r);
-        }
-        
-        error? vErr = validateAuth(req);
-        if vErr is error {
-            http:Response r = new;
-            r.statusCode = http:STATUS_UNAUTHORIZED;
-            r.setJsonPayload({"error": vErr.message()});
-            return caller->respond(r);
-        }
-        
-        // Verify caller is organization or the specific volunteer
-        string authHeader = check req.getHeader("Authorization");
-        string token = authHeader.substring(7);
-        jwt:Payload jwtPayload = check jwt:validate(token, validatorConfig);
-        anydata? userIdJ = jwtPayload["user_id"];
-        anydata? userTypeJ = jwtPayload["user_type"];
-        
-        int userId = -1;
-        if userIdJ is int {
-            userId = userIdJ;
-        } else if userIdJ is string {
-            int|error parsed = 'int:fromString(userIdJ);
-            if parsed is int {
-                userId = parsed;
-            }
-        }
-        
-        string userType = "";
-        if userTypeJ is string {
-            userType = userTypeJ;
-        }
-        
-        // Get organization ID for this event to verify access
-        stream<record {|int org_id;|}, sql:Error?> orgStream = dbClient->query(`
-            SELECT organization_id as org_id FROM events WHERE event_id = ${event_id}`);
-        record {|record {|int org_id;|} value;|}|sql:Error? orgRow = orgStream.next();
-        check orgStream.close();
-        
-        int eventOrgId = -1;
-        if orgRow is record {|record {|int org_id;|} value;|} {
-            eventOrgId = orgRow.value.org_id;
-        }
-        
-        // Only allow:
-        // 1. The specific volunteer (userId == volunteer_id)
-        // 2. The organization that owns the event (userId == eventOrgId)
-        boolean hasAccess = false;
-        if userType == "volunteer" && userId == volunteer_id {
-            hasAccess = true;
-        } else if userType == "organization" && userId == eventOrgId {
-            hasAccess = true;
-        }
-        
-        if !hasAccess {
-            http:Response r = new;
-            r.statusCode = http:STATUS_FORBIDDEN;
-            r.setJsonPayload({"error": "Access denied - you can only view your own conversations"});
-            return caller->respond(r);
-        }
-        
-        ChatMessage[] messages = check getPrivateChatMessages(event_id, volunteer_id);
-        return caller->respond(messages);
-    }
-
     resource function post events/[int event_id]/messages/volunteer/[int volunteer_id](http:Caller caller, http:Request req) returns error? {
-        // Validate path parameters
         if event_id <= 0 || volunteer_id <= 0 {
             http:Response r = new;
             r.statusCode = http:STATUS_BAD_REQUEST;
             r.setJsonPayload({"error": "Invalid event_id or volunteer_id"});
             return caller->respond(r);
         }
-        
+
         error? vErr = validateAuth(req);
         if vErr is error {
             http:Response r = new;
@@ -1894,13 +1866,13 @@ service /api/chat on mainListener {
                 message = msgVal;
             }
         }
-        
+
         string authHeader = check req.getHeader("Authorization");
         string token = authHeader.substring(7);
         jwt:Payload jwtPayload = check jwt:validate(token, validatorConfig);
         anydata? userIdJ = jwtPayload["user_id"];
         anydata? userTypeJ = jwtPayload["user_type"];
-        
+
         int senderId = -1;
         if userIdJ is int {
             senderId = userIdJ;
@@ -1910,45 +1882,41 @@ service /api/chat on mainListener {
                 senderId = parsed;
             }
         }
-        
+
         string userType = "";
         if userTypeJ is string {
             userType = userTypeJ;
         }
-        
-        // Get organization ID for this event
+
         stream<record {|int org_id;|}, sql:Error?> orgStream = dbClient->query(`
             SELECT organization_id as org_id FROM events WHERE event_id = ${event_id}`);
         record {|record {|int org_id;|} value;|}|sql:Error? orgRow = orgStream.next();
         check orgStream.close();
-        
+
         int eventOrgId = -1;
         if orgRow is record {|record {|int org_id;|} value;|} {
             eventOrgId = orgRow.value.org_id;
         }
-        
-        // Verify sender has access to this conversation
+
         boolean hasAccess = false;
         int recipientId = -1;
-        
+
         if userType == "volunteer" && senderId == volunteer_id {
-            // Volunteer sending to organization
             hasAccess = true;
             recipientId = eventOrgId;
         } else if userType == "organization" && senderId == eventOrgId {
-            // Organization sending to volunteer
             hasAccess = true;
             recipientId = volunteer_id;
         }
-        
+
         if !hasAccess {
             http:Response r = new;
             r.statusCode = http:STATUS_FORBIDDEN;
             r.setJsonPayload({"error": "Access denied - you can only send messages in your own conversations"});
             return caller->respond(r);
         }
-        
-        check postPrivateChatMessage(event_id, senderId, recipientId, message);
+
+        check postPrivateChatMessagesToVolunteer(event_id, senderId, recipientId, message);
         return caller->respond({success: true});
     }
 
@@ -1992,10 +1960,8 @@ service /api/chat on mainListener {
             return error("Invalid user_id in JWT");
         }
 
-        check postChatMessage(event_id, userId, message);
+        check postPrivateChatMessagesToOrganization(event_id, userId, message);
         return caller->respond({success: true});
     }
 }
-
-
 
