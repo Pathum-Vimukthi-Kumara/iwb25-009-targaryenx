@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AdminSidebar from "./AdminSidebar";
 import { FiMail, FiUser, FiCalendar, FiEye } from "react-icons/fi";
+import LoadingSpinner from "../../components/LoadingSpinner";
 
 const ContactMessages = () => {
   const [messages, setMessages] = useState([]);
@@ -126,9 +127,7 @@ const ContactMessages = () => {
         )}
 
         {isLoading ? (
-          <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-          </div>
+          <LoadingSpinner />
         ) : (
           <>
             {messages.length === 0 ? (
@@ -206,10 +205,7 @@ const ContactMessages = () => {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <button
-                              onClick={() => {
-                                handleViewMessage(message);
-                                markMessageAsRead(message.contact_id);
-                              }}
+                              onClick={() => handleViewMessage(message)}
                               className="text-primary hover:text-primary/80 flex items-center"
                             >
                               <FiEye className="mr-1" />

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AdminSidebar from "./AdminSidebar";
 import { FiAward, FiPlus, FiUser, FiCalendar } from "react-icons/fi";
+import LoadingSpinner from "../../components/LoadingSpinner";
 
 const AdminBadges = () => {
   const [volunteers, setVolunteers] = useState([]);
@@ -181,9 +182,7 @@ const AdminBadges = () => {
         )}
 
         {isLoading ? (
-          <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-          </div>
+          <LoadingSpinner />
         ) : (
           <>
             {volunteers.length === 0 ? (

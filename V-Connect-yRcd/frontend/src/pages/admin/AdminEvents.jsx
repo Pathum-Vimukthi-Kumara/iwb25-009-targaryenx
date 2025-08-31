@@ -10,6 +10,7 @@ import {
 import AdminSidebar from "./AdminSidebar";
 import { fetchWithFallback, getMockData } from "../../utils/apiUtils";
 import ApiErrorBanner from "../../components/common/ApiErrorBanner";
+import LoadingSpinner from "../../components/LoadingSpinner";
 
 const AdminEvents = () => {
   const [events, setEvents] = useState([]);
@@ -200,9 +201,7 @@ const AdminEvents = () => {
           )}
 
           {isLoading ? (
-            <div className="flex justify-center items-center h-64">
-              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-            </div>
+            <LoadingSpinner />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {events.map((event) => (

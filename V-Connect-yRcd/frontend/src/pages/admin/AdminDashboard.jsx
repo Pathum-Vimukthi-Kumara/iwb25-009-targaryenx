@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AdminSidebar from "./AdminSidebar";
 import AdminStats from "./AdminStats";
+import LoadingSpinner from "../../components/LoadingSpinner";
 
 const AdminDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -81,9 +82,7 @@ const AdminDashboard = () => {
         </h1>
 
         {isLoading ? (
-          <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-          </div>
+          <LoadingSpinner />
         ) : (
           <AdminStats stats={stats} />
         )}

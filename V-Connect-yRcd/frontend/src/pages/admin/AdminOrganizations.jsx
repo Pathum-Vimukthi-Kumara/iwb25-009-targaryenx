@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiCheckCircle, FiXCircle, FiTrash2, FiAlertCircle, FiInfo } from 'react-icons/fi';
 import AdminSidebar from './AdminSidebar';
+import LoadingSpinner from '../../components/LoadingSpinner';
 
 const AdminOrganizations = () => {
   const [organizations, setOrganizations] = useState([]);
@@ -234,9 +235,7 @@ const AdminOrganizations = () => {
       )}
       
       {isLoading ? (
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-        </div>
+        <LoadingSpinner />
       ) : (
         <div className="bg-white shadow-md rounded-lg overflow-hidden">
           <table className="min-w-full divide-y divide-gray-200">
