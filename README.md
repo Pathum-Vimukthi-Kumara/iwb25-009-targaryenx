@@ -97,6 +97,7 @@ npm run dev
 ## Advantages & Architecture
 - **Separation of Concerns:** Modular backend services for org, volunteer, admin, chat, etc.
 - **JWT Authentication:** Secure, role-based access for all APIs.
+- **Password Hashing:** User credentials are securely stored using SHA-256 one-way hashing to protect against leaks.
 - **Declarative HTTP APIs:** Ballerina's service/resource model for clean REST endpoints.
 - **Cloud-Native Ready:** Easy to containerize and deploy.
 - **Efficient Resource Usage:** No polling; HTTP-based chat and notifications.
