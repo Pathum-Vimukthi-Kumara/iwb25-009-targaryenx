@@ -1,15 +1,16 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FiHome, FiUsers, FiCalendar, FiUser, FiLogOut, 
-  FiSettings, FiPlusCircle, FiHeart, FiAward, FiMenu, FiX, FiAlertCircle 
+  FiSettings, FiPlusCircle, FiHeart, FiAward, FiMenu, FiX, FiAlertCircle, FiGrid
 
 } from 'react-icons/fi';
 
 const DashboardLayout = ({ children, userType = 'volunteer' }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const currentPath = location.pathname;
@@ -20,7 +21,28 @@ const DashboardLayout = ({ children, userType = 'volunteer' }) => {
     localStorage.removeItem('userId');
     localStorage.removeItem('userType');
     navigate('/login');
+  };
 
+  // Show logout confirmation modal
+  const showLogoutConfirmation = () => {
+    setShowLogoutModal(true);
+  };
+
+  // Handle logout with animation
+  const handleLogoutWithAnimation = () => {
+    // Add a small delay to show the button press animation
+    setTimeout(() => {
+      // Clear all auth related items from localStorage
+      localStorage.removeItem('token');
+      localStorage.removeItem('userId');
+      localStorage.removeItem('userType');
+      
+      // Close the modal
+      setShowLogoutModal(false);
+      
+      // Navigate to login page
+      navigate('/login');
+    }, 150);
   };
   
   // Define menu items based on user type
@@ -34,7 +56,12 @@ const DashboardLayout = ({ children, userType = 'volunteer' }) => {
             label: 'Dashboard',
             description: 'View available events and opportunities'
           },
-          
+          { 
+            path: '/volunteer-all-events', 
+            icon: <FiGrid size={20} />, 
+            label: 'All Events',
+            description: 'Browse all available volunteer events'
+          },
           { 
             path: '/volunteer-events', 
             icon: <FiCalendar size={20} />, 
@@ -148,10 +175,10 @@ const DashboardLayout = ({ children, userType = 'volunteer' }) => {
   
   // Animation variants
   const sidebarVariants = {
-    open: { width: 280, transition: { duration: 0.3 } },
-    closed: { width: 80, transition: { duration: 0.3 } },
-    mobileOpen: { x: 0, transition: { duration: 0.3 } },
-    mobileClosed: { x: '-100%', transition: { duration: 0.3 } }
+    open: { width: 280, transition: { duration: 0.3, ease: "easeInOut" } },
+    closed: { width: 80, transition: { duration: 0.3, ease: "easeInOut" } },
+    mobileOpen: { x: 0, transition: { duration: 0.3, ease: "easeInOut" } },
+    mobileClosed: { x: '-100%', transition: { duration: 0.3, ease: "easeInOut" } }
   };
   
   const contentVariants = {
@@ -182,11 +209,10 @@ const DashboardLayout = ({ children, userType = 'volunteer' }) => {
         <div className="flex flex-col h-full">
           <div className="p-4 border-b border-gray-200">
             <div className="flex items-center space-x-2">
-
-
-              <span className="font-bold text-xl">
-                <span className="text-primary">V</span>
-
+              <span className="font-bold text-2xl">
+                <span className="text-primary cursor-pointer inline-block hover:brightness-150 hover:drop-shadow-[0_0_8px_rgba(59,130,246,0.6)] transition-all duration-300">
+                  V
+                </span>
                 <span className="text-dark">-Connect</span>
               </span>
             </div>
@@ -208,7 +234,7 @@ const DashboardLayout = ({ children, userType = 'volunteer' }) => {
                         : 'text-gray-700 hover:bg-gray-100'
                     }`}
                   >
-                    <div className={`${currentPath === item.path ? 'text-primary' : 'text-gray-500'}`}>
+                    <div className={`flex items-center justify-center h-7 ${currentPath === item.path ? 'text-primary' : 'text-gray-500'}`}>
                       {item.icon}
                     </div>
                     <span>{item.label}</span>
@@ -220,10 +246,12 @@ const DashboardLayout = ({ children, userType = 'volunteer' }) => {
           
           <div className="p-4 border-t border-gray-200">
             <button
-              onClick={handleLogout}
+              onClick={showLogoutConfirmation}
               className="flex items-center space-x-3 w-full px-4 py-3 rounded-lg text-red-500 hover:bg-red-50 transition-colors"
             >
-              <FiLogOut size={20} />
+              <div className="flex items-center justify-center h-7">
+                <FiLogOut size={20} />
+              </div>
               <span>Logout</span>
             </button>
           </div>
@@ -238,10 +266,15 @@ const DashboardLayout = ({ children, userType = 'volunteer' }) => {
         animate={isSidebarOpen ? "open" : "closed"}
       >
         <div className="flex flex-col h-full">
-          <div className="p-4 border-b border-gray-200">
+          <div className="pt-8 pb-6 px-8 border-b border-gray-200">
             <div className="flex items-center space-x-2">
-              <span className="font-bold text-xl">
-                <span className="text-primary">V</span>
+              <span className="font-bold text-3xl">
+                <span 
+                  className="text-primary cursor-pointer inline-block hover:brightness-150 hover:drop-shadow-[0_0_8px_rgba(59,130,246,0.6)] transition-all duration-300" 
+                  onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                >
+                  V
+                </span>
                 <span className={`text-dark ${!isSidebarOpen ? 'hidden' : 'inline'}`}>-Connect</span>
               </span>
             </div>
@@ -252,22 +285,22 @@ const DashboardLayout = ({ children, userType = 'volunteer' }) => {
             )}
           </div>
           
-          <nav className="mt-4 flex-grow overflow-y-auto">
-            <ul className="space-y-1 px-2">
+          <nav className="mt-6 flex-grow overflow-y-auto">
+            <ul className="space-y-2 px-2">
               {menuItems.map((item) => (
                 <li key={item.path}>
                   <Link 
                     to={item.path} 
-                    className={`flex items-center ${isSidebarOpen ? 'space-x-3' : 'justify-center'} px-4 py-3 rounded-lg transition-colors ${
+                    className={`flex items-center ${isSidebarOpen ? 'space-x-3' : 'justify-center'} px-6 py-3 rounded-lg transition-colors ${
                       currentPath === item.path 
                         ? 'bg-primary/10 text-primary font-medium' 
                         : 'text-gray-700 hover:bg-gray-100'
                     }`}
                   >
-                    <div className={`${currentPath === item.path ? 'text-primary' : 'text-gray-500'}`}>
+                    <div className={`flex items-center justify-center ${currentPath === item.path ? 'text-primary' : 'text-gray-500'}`} style={{ height: "32px", paddingTop: "1px" }}>
                       {item.icon}
                     </div>
-                    {isSidebarOpen && <span>{item.label}</span>}
+                    {isSidebarOpen && <span className="pt-0.5">{item.label}</span>}
                   </Link>
                 </li>
               ))}
@@ -276,32 +309,15 @@ const DashboardLayout = ({ children, userType = 'volunteer' }) => {
           
           <div className="p-4 border-t border-gray-200">
             <button
-              onClick={handleLogout}
-              className={`flex items-center ${isSidebarOpen ? 'space-x-3' : 'justify-center'} w-full px-4 py-3 rounded-lg text-red-500 hover:bg-red-50 transition-colors`}
+              onClick={showLogoutConfirmation}
+              className={`flex items-center ${isSidebarOpen ? 'space-x-3' : 'justify-center'} w-full px-6 py-3 rounded-lg text-red-500 hover:bg-red-50 transition-colors`}
             >
-              <FiLogOut size={20} />
-              {isSidebarOpen && <span>Logout</span>}
+              <div className="flex items-center justify-center" style={{ height: "32px", paddingTop: "1px" }}>
+                <FiLogOut size={20} />
+              </div>
+              {isSidebarOpen && <span className="pt-0.5">Logout</span>}
             </button>
           </div>
-
-          <div className="p-4 border-t border-gray-200">
-            <button
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="flex items-center justify-center w-full p-2 rounded-md bg-gray-100 hover:bg-gray-200 transition-colors"
-              aria-label={isSidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
-            >
-              {isSidebarOpen ? (
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="15 18 9 12 15 6"></polyline>
-                </svg>
-              ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="9 18 15 12 9 6"></polyline>
-                </svg>
-              )}
-            </button>
-          </div>
-
         </div>
       </motion.div>
       
@@ -314,10 +330,67 @@ const DashboardLayout = ({ children, userType = 'volunteer' }) => {
         transition={{ duration: 0.3 }}
       >
         <div className="md:hidden h-16"></div> {/* Space for mobile header */}
-        <div className="container px-4 py-6 md:px-6 md:py-8">
+        <div className="w-full px-4 py-6 sm:px-4 md:px-6 md:py-8 lg:px-8 xl:px-10">
           {children}
         </div>
       </motion.main>
+
+      {/* Logout Confirmation Modal */}
+      <AnimatePresence>
+        {showLogoutModal && (
+          <>
+            {/* Modal Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15, ease: "easeOut" }}
+              className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+              onClick={() => setShowLogoutModal(false)}
+            >
+              {/* Modal Content */}
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0, y: 20 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.8, opacity: 0, y: 20 }}
+                transition={{ type: "spring", stiffness: 300, damping: 25, duration: 0.3 }}
+                className="bg-white rounded-lg shadow-lg max-w-md w-full mx-auto p-6"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center mb-4">
+                  <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center mr-3">
+                    <FiAlertCircle className="text-red-500 text-xl" />
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-900">Confirm Logout</h3>
+                </div>
+                
+                <p className="text-gray-600 mb-6">
+                  Are you sure you want to log out? Any unsaved changes will be lost.
+                </p>
+                
+                <div className="flex justify-end space-x-3">
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-300 transition-colors"
+                    onClick={() => setShowLogoutModal(false)}
+                  >
+                    Cancel
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="px-4 py-2 text-sm font-medium text-white bg-red-500 rounded-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300 transition-colors"
+                    onClick={handleLogoutWithAnimation}
+                  >
+                    Logout
+                  </motion.button>
+                </div>
+              </motion.div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
