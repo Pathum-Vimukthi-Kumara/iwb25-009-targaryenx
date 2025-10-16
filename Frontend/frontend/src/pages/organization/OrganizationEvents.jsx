@@ -1086,7 +1086,7 @@ const OrganizationEvents = () => {
                                       <td className="py-2 px-2 sm:px-4 text-xs sm:text-sm whitespace-nowrap">
                                         <button
                                           onClick={() => handleViewVolunteerProfile(app.volunteer_id)}
-                                          className="bg-gray-100 text-gray-700 px-2 py-1 rounded-md mr-1 sm:mr-2 text-xs hover:bg-gray-200 transition-colors"
+                                          className="bg-orange-100 text-orange-700 px-2 py-1 rounded-md mr-1 sm:mr-2 text-xs hover:bg-orange-200 transition-colors"
                                         >
                                           View Profile
                                         </button>
@@ -1137,7 +1137,7 @@ const OrganizationEvents = () => {
                                       <td className="py-2 px-2 sm:px-4 text-xs sm:text-sm whitespace-nowrap">
                                         <button
                                           onClick={() => handleViewVolunteerProfile(app.volunteer_id)}
-                                          className="bg-gray-100 text-gray-700 px-2 py-1 rounded-md mr-1 sm:mr-2 text-xs hover:bg-gray-200 transition-colors"
+                                          className="bg-orange-100 text-orange-700 px-2 py-1 rounded-md mr-1 sm:mr-2 text-xs hover:bg-orange-200 transition-colors"
                                         >
                                           View Profile
                                         </button>
@@ -1150,7 +1150,7 @@ const OrganizationEvents = () => {
                                             }
                                             openChatModal({ volunteer_id: app.volunteer_id, name: app.volunteer_name });
                                           }}
-                                          className="bg-blue-100 text-blue-700 px-2 py-1 rounded-md mr-1 sm:mr-2 text-xs hover:bg-blue-200 transition-colors flex items-center"
+                                          className="bg-purple-100 text-purple-700 px-2 py-1 rounded-md mr-1 sm:mr-2 text-xs hover:bg-purple-200 transition-colors flex items-center"
                                         >
                                           <FiMessageCircle className="mr-1" size={12} />
                                           View Messages
@@ -1232,7 +1232,7 @@ const OrganizationEvents = () => {
                     <span className="font-semibold text-primary">Skills:</span>
                     <div className="flex flex-wrap justify-center gap-2 mt-2">
                       {volunteerProfile.skills.split(',').map((skill, idx) => (
-                        <span key={idx} className="inline-block bg-primary/10 text-primary font-medium px-3 py-1 rounded-full text-sm shadow-sm border border-primary/20">
+                        <span key={idx} className="inline-block bg-gray-100 text-gray-700 font-medium px-3 py-1 rounded-full text-sm shadow-sm border border-gray-200">
                           {skill.trim()}
                         </span>
                       ))}
