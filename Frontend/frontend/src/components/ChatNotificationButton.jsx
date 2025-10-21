@@ -10,14 +10,16 @@ export default function ChatNotificationButton({ eventId, volunteerId, onClick }
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`/api/chat/events/${eventId}/messages/unread?volunteer_id=${volunteerId}`, {
+      const res = await fetch(`http://localhost:9000/api/chat/events/${eventId}/messages/unread?volunteer_id=${volunteerId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
         const data = await res.json();
         setUnreadCount(data.unread || 0);
       }
-    } catch {}
+    } catch (error) {
+      console.log("Error fetching unread messages:", error);
+    }
     setLoading(false);
   }
   useEffect(() => {
@@ -25,22 +27,16 @@ export default function ChatNotificationButton({ eventId, volunteerId, onClick }
   }, [eventId, volunteerId]);
 
   return (
-    <div>
-      <button
-        onClick={onClick}
-        className="relative flex items-center bg-purple-100 text-purple-700 px-3 py-1 rounded-md text-xs hover:bg-purple-200 transition-colors font-medium"
-        title="View Messages"
-      >
-        <FiMessageSquare className="mr-1" />
-        {(!loading && unreadCount > 0) && (
-          <span className="absolute top-0 right-0 bg-red-500 text-white rounded-full px-2 py-0.5 text-xs font-bold">{unreadCount}</span>
-        )}
-      </button>
-      <button
-        onClick={fetchUnread}
-        className="ml-2 px-2 py-1 bg-gray-200 rounded text-xs"
-        title="Refresh unread count"
-      >Refresh</button>
-    </div>
+    <button
+      onClick={onClick}
+      className="relative flex items-center bg-purple-100 text-purple-700 px-3 py-1 rounded-md text-xs hover:bg-purple-200 transition-colors font-medium"
+      title="View Messages"
+    >
+      <FiMessageSquare className="mr-1" />
+      <span>Messages</span>
+      {(!loading && unreadCount > 0) && (
+        <span className="absolute top-0 right-0 bg-red-500 text-white rounded-full px-2 py-0.5 text-xs font-bold">{unreadCount}</span>
+      )}
+    </button>
   );
 }

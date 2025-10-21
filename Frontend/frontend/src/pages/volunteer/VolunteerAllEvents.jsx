@@ -21,8 +21,9 @@ const VolunteerAllEvents = () => {
       setError(null);
       try {
         const token = localStorage.getItem('token');
-        // Fetch all events
-        const eventsRes = await fetch('http://localhost:9000/api/org/events', {
+        
+        // Fetch all events - using public events endpoint instead of organization endpoint
+        const eventsRes = await fetch('http://localhost:9000/pub/events', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (!eventsRes.ok) throw new Error('Failed to fetch events');
@@ -134,37 +135,52 @@ const VolunteerAllEvents = () => {
   const handleApplyToEvent = async (eventId) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:9000/api/org/events/${eventId}/apply`, {
+      const response = await fetch(`http://localhost:9000/api/vol/events/${eventId}/apply`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({})
+        }
       });
+      
       if (!response.ok) {
-        throw new Error('Failed to apply for event');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to apply for event');
       }
+      
       alert('Successfully applied to the event!');
+      
       // Re-fetch events and applications to update UI
       setIsLoading(true);
-      const eventsRes = await fetch('http://localhost:9000/api/org/events', {
+      const eventsRes = await fetch('http://localhost:9000/pub/events', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const appsRes = await fetch('http://localhost:9000/api/vol/applications', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
+      
+      // Fetch organizations again to ensure data consistency
+      const orgRes = await fetch('http://localhost:9000/pub/organizations/');
+      
       let eventsData = [];
       let appsData = [];
+      let organizations = [];
+      
       if (eventsRes.ok) eventsData = await eventsRes.json();
       if (appsRes.ok) appsData = await appsRes.json();
+      if (orgRes.ok) organizations = await orgRes.json();
       setApplications(appsData);
       const appliedEventIds = new Set(appsData.map(app => app.event_id));
-      const mergedEvents = eventsData.map(event => ({
-        ...event,
-        has_applied: appliedEventIds.has(event.event_id)
-      }));
+      const mergedEvents = eventsData.map(event => {
+        const org = organizations.find(o => o.user_id === event.organization_id);
+        return {
+          ...event,
+          has_applied: appliedEventIds.has(event.event_id),
+          organization_name: org?.name || 'Unknown Organization'
+        };
+      });
       setEvents(mergedEvents);
+      setFilteredEvents(mergedEvents);
       setIsLoading(false);
     } catch (err) {
       alert(err.message || 'Something went wrong');

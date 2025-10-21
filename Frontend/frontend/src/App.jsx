@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { WebSocketProvider } from './contexts/WebSocketContext'
 import Navbar from './components/Navbar'
 import Hero from './sections/Hero'
 import About from './sections/About'
@@ -105,10 +104,9 @@ const ScrollToTop = () => {
 
 function App() {
   return (
-    <WebSocketProvider>
-      <Router>
-        <ScrollToTop />
-        <Routes>
+    <Router>
+      <ScrollToTop />
+      <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/donations" element={<AllDonationsPage />} />
@@ -143,7 +141,6 @@ function App() {
         <Route path="/volunteer-feedback" element={<VolunteerFeedback />} />
         </Routes>
       </Router>
-    </WebSocketProvider>
   )
 }
 

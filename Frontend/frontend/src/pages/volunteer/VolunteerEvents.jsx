@@ -103,11 +103,36 @@ const VolunteerEvents = () => {
       setError(null);
       try {
         const token = localStorage.getItem('token');
+        
+        // Get user type from token
+        let userType = '';
+        try {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          userType = payload.user_type || '';
+        } catch (e) {
+          console.error("Error parsing token:", e);
+        }
+
+        // Check if user is volunteer type
+        if (userType !== 'volunteer') {
+          setError('Access denied. Only volunteers can view this page.');
+          setIsLoading(false);
+          return;
+        }
+        
         // Step 1: Get applications
         const response = await fetch('http://localhost:9000/api/vol/applications', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
-        if (!response.ok) throw new Error('Failed to fetch my events');
+        
+        if (!response.ok) {
+          if (response.status === 403) {
+            throw new Error('Access denied. Only volunteers can view this page.');
+          } else {
+            throw new Error('Failed to fetch my events');
+          }
+        }
+        
         const applications = await response.json();
         // Step 2: Fetch all organizations first
         let organizations = [];
