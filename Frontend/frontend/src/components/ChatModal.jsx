@@ -74,13 +74,18 @@ function formatTime(dateString) {
       const token = localStorage.getItem('token');
       if (token) {
         const payload = JSON.parse(atob(token.split('.')[1]));
-        return { userId: payload.user_id, userType: payload.user_type };
+        return { 
+          userId: payload.user_id, 
+          userType: payload.user_type,
+          name: payload.name || null,
+          organizationName: payload.organization_name || null
+        };
       }
     } catch (e) {}
-    return { userId: null, userType: null };
+    return { userId: null, userType: null, name: null, organizationName: null };
   };
   
-  const { userId: currentUserId, userType: currentUserType } = getCurrentUser();
+  const { userId: currentUserId, userType: currentUserType, organizationName } = getCurrentUser();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -341,6 +346,39 @@ function formatTime(dateString) {
 
   if (!isOpen) return null;
 
+  // Determine chat header text
+  const getChatHeaderInfo = () => {
+    // Private chat between volunteer and organization
+    if (volunteerId) {
+      // If current user is a volunteer viewing chat with organization
+      if (currentUserType === 'volunteer') {
+        return {
+          title: 'Private Chat',
+          withText: 'Organization Admin',
+          eventText: eventTitle
+        };
+      }
+      
+      // If current user is an organization viewing chat with volunteer
+      if (currentUserType === 'organization') {
+        return {
+          title: 'Private Chat',
+          withText: volunteerName || 'Volunteer',
+          eventText: eventTitle
+        };
+      }
+    }
+    
+    // Public event chat
+    return {
+      title: eventTitle,
+      withText: null,
+      eventText: null
+    };
+  };
+  
+  const headerInfo = getChatHeaderInfo();
+
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md h-[600px] flex flex-col relative">
@@ -355,14 +393,18 @@ function formatTime(dateString) {
           </div>
           <div className="flex-1">
             <h2 className="text-xl font-bold text-gray-900 truncate">
-              {volunteerName ? 'Private Chat' : eventTitle}
+              {headerInfo.title}
             </h2>
-            {volunteerName ? (
-              <div className="flex items-center">
+            {headerInfo.withText ? (
+              <div className="flex flex-col">
                 <p className="text-sm text-gray-600">
-                  with <span className="font-semibold">{volunteerName}</span>
+                  with <span className="font-semibold">{headerInfo.withText}</span>
                 </p>
-                <span className="ml-2 text-xs text-green-600">Active now</span>
+                {headerInfo.eventText && (
+                  <p className="text-xs text-blue-600">
+                    Event: <span className="font-medium">{headerInfo.eventText}</span>
+                  </p>
+                )}
               </div>
             ) : (
               <p className="text-sm text-gray-600">Event Discussion</p>
