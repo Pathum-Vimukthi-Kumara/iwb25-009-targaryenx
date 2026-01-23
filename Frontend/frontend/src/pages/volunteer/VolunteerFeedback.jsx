@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { FiStar } from 'react-icons/fi';
 import DashboardLayout from './DashboardLayout';
-import LoadingSpinner from '../../components/LoadingSpinner';
+import Spinner from '../../components/Spinner';
 
 const VolunteerFeedback = () => {
   const [feedback, setFeedback] = useState([]);
@@ -98,7 +98,7 @@ const VolunteerFeedback = () => {
       </div>
       
       {loading ? (
-        <LoadingSpinner />
+        <Spinner overlay message="Loading feedback..." />
       ) : error ? (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
           <p className="text-red-600">{error}</p>

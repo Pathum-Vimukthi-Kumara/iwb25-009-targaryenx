@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiCalendar, FiClock, FiMapPin, FiUsers, FiAlertCircle, FiX, FiSearch } from 'react-icons/fi';
 import DashboardLayout from './DashboardLayout';
-import LoadingSpinner from '../../components/LoadingSpinner';
+import Spinner from '../../components/Spinner';
 
 const VolunteerAllEvents = () => {
   const [events, setEvents] = useState([]);
@@ -211,7 +211,7 @@ const VolunteerAllEvents = () => {
       
       {/* Events Grid */}
       {isLoading ? (
-        <LoadingSpinner />
+        <Spinner overlay message="Loading events..." />
       ) : error ? (
         <div className="bg-red-50 p-4 rounded-lg flex items-center text-red-600">
           <FiAlertCircle className="mr-2" />

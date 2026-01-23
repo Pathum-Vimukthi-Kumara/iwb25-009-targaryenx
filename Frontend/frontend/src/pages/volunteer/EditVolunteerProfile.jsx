@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { FiX } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
-import SavingSpinner from '../../components/SavingSpinner';
+import Spinner from '../../components/Spinner';
 
 const EditVolunteerProfile = ({ profile, onClose, onSave }) => {
   const defaultSkills = [
@@ -251,7 +251,7 @@ const EditVolunteerProfile = ({ profile, onClose, onSave }) => {
               >
                 <AnimatePresence mode="wait">
                   {isSubmitting ? (
-                    <SavingSpinner key="saving" message="Saving..." size="small" />
+                    <Spinner key="saving" message="Saving..." size="small" />
                   ) : (
                     <motion.span
                       key="save"

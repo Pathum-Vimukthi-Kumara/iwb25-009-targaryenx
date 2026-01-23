@@ -4,7 +4,7 @@ import ChatNotificationButton from '../../components/ChatNotificationButton';
 import { motion } from 'framer-motion';
 import { FiCalendar, FiMapPin, FiUsers, FiClock, FiAlertCircle, FiSearch } from 'react-icons/fi';
 import DashboardLayout from './DashboardLayout';
-import LoadingSpinner from '../../components/LoadingSpinner';
+import Spinner from '../../components/Spinner';
 
 const VolunteerEvents = () => {
   const [events, setEvents] = useState([]);
@@ -230,7 +230,7 @@ const VolunteerEvents = () => {
         <p className="text-gray-600">Events you have applied for.</p>
       </div>
       {isLoading ? (
-        <LoadingSpinner />
+        <Spinner overlay message="Loading events..." />
       ) : error ? (
         <div className="bg-red-50 p-4 rounded-lg flex items-center text-red-600">
           <p>{error}</p>

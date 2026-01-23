@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { FiAward, FiCalendar, FiUser } from 'react-icons/fi'
 import DashboardLayout from './DashboardLayout';
-import LoadingSpinner from '../../components/LoadingSpinner';
+import Spinner from '../../components/Spinner';
 
 const VolunteerBadges = () => {
   const [badges, setBadges] = useState([])
@@ -71,7 +71,7 @@ const VolunteerBadges = () => {
       </div>
 
       {isLoading ? (
-        <LoadingSpinner />
+        <Spinner overlay message="Loading badges..." />
       ) : (
         <>
           {/* Badge Stats */}

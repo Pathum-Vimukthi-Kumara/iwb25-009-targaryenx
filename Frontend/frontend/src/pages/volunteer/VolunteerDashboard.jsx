@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FiCalendar, FiAward, FiUsers, FiAlertCircle, FiCheckCircle, FiMapPin } from 'react-icons/fi';
 import DashboardLayout from './DashboardLayout';
-import LoadingSpinner from '../../components/LoadingSpinner';
+import Spinner from '../../components/Spinner';
 
 const VolunteerDashboard = () => {
   const [stats, setStats] = useState({
@@ -117,7 +117,7 @@ const VolunteerDashboard = () => {
       </motion.h1>
       
       {isLoading ? (
-        <LoadingSpinner />
+        <Spinner overlay message="Loading dashboard..." />
       ) : error ? (
         <motion.div 
           initial={{ opacity: 0 }}

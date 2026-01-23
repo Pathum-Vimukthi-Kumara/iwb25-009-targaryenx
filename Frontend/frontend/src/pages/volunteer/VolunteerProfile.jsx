@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { FiEdit2, FiAward, FiClock, FiUser, FiMail, FiPhone, FiStar } from 'react-icons/fi';
 import DashboardLayout from './DashboardLayout';
 import EditVolunteerProfile from './EditVolunteerProfile';
-import LoadingSpinner from '../../components/LoadingSpinner';
+import Spinner from '../../components/Spinner';
 
 const VolunteerProfile = () => {
   const [profile, setProfile] = useState([]);
@@ -222,7 +222,7 @@ const VolunteerProfile = () => {
       </div>
       
       {isLoading ? (
-        <LoadingSpinner />
+        <Spinner overlay message="Loading profile..." />
       ) : error ? (
         <div className="bg-red-50 p-4 rounded-lg mb-6">
           <p className="text-red-600">{error}</p>
